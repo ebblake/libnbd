@@ -39,6 +39,9 @@ let () =
         let tls = NBD.get_tls nbd in
         assert (tls = NBD.TLS.ALLOW);
       );
+      NBD.set_request_extended_headers nbd false;
+      let eh = NBD.get_request_extended_headers nbd in
+      assert (eh = false);
       NBD.set_request_structured_replies nbd false;
       let sr = NBD.get_request_structured_replies nbd in
       assert (not sr);

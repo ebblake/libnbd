@@ -24,6 +24,7 @@ fn test_defaults() {
     assert!(nbd.get_export_name().unwrap().is_empty());
     assert!(!nbd.get_full_info().unwrap());
     assert_eq!(nbd.get_tls(), libnbd::Tls::Disable);
+    assert!(nbd.get_request_extended_headers());
     assert!(nbd.get_request_structured_replies());
     assert!(nbd.get_request_meta_context().unwrap());
     assert!(nbd.get_request_block_size().unwrap());

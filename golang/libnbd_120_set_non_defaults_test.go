@@ -81,6 +81,18 @@ func Test120SetNonDefaults(t *testing.T) {
 		}
 	}
 
+	err = h.SetRequestExtendedHeaders(false)
+	if err != nil {
+		t.Fatalf("could not set extended headers state: %s", err)
+	}
+	eh, err := h.GetRequestExtendedHeaders()
+	if err != nil {
+		t.Fatalf("could not get extended headers state: %s", err)
+	}
+	if eh != false {
+		t.Fatalf("unexpected extended headers state")
+	}
+
 	err = h.SetRequestStructuredReplies(false)
 	if err != nil {
 		t.Fatalf("could not set structured replies state: %s", err)

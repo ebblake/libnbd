@@ -32,6 +32,9 @@ fn test_set_non_defaults() {
         assert_eq!(nbd.get_tls(), libnbd::Tls::Allow);
     }
 
+    nbd.set_request_extended_headers(false).unwrap();
+    assert!(!nbd.get_request_extended_headers());
+
     nbd.set_request_structured_replies(false).unwrap();
     assert!(!nbd.get_request_structured_replies());
 

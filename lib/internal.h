@@ -113,6 +113,7 @@ struct nbd_handle {
   char *tls_psk_file;           /* PSK filename, NULL = no PSK */
 
   /* Extended headers. */
+  bool request_eh;              /* Whether to request extended headers */
   bool extended_headers;        /* If we negotiated NBD_OPT_EXTENDED_HEADERS */
 
   /* Desired metadata contexts. */

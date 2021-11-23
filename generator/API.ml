@@ -808,6 +808,77 @@ Get the current TLS PSK filename.";
   };
 *)
 
+  "set_request_extended_headers", {
+    default_call with
+    args = [Bool "request"]; ret = RErr;
+    permitted_states = [ Created ];
+    shortdesc = "control use of extended headers";
+    longdesc = "\
+By default, libnbd tries to negotiate extended headers with the
+server, as this protocol extension permits the use of 64-bit
+zero, trim, and block status actions.  However,
+for integration testing, it can be useful to clear this flag
+rather than find a way to alter the server to fail the negotiation
+request.
+
+For backwards compatibility, the setting of this knob is ignored
+if L<nbd_set_request_structured_replies(3)> is also set to false,
+since the use of extended headers implies structured replies.";
+    see_also = [Link "get_request_extended_headers";
+                Link "set_handshake_flags"; Link "set_strict_mode";
+                Link "get_extended_headers_negotiated";
+                Link "zero"; Link "trim"; Link "cache";
+                Link "block_status_64";
+                Link "set_request_structured_replies"];
+  };
+
+  "get_request_extended_headers", {
+    default_call with
+    args = []; ret = RBool;
+    may_set_error = false;
+    shortdesc = "see if extended headers are attempted";
+    longdesc = "\
+Return the state of the request extended headers flag on this
+handle.
+
+B<Note:> If you want to find out if extended headers were actually
+negotiated on a particular connection use
+L<nbd_get_extended_headers_negotiated(3)> instead.";
+    see_also = [Link "set_request_extended_headers";
+                Link "get_extended_headers_negotiated";
+                Link "get_request_extended_headers"];
+  };
+
+  "get_extended_headers_negotiated", {
+    default_call with
+    args = []; ret = RBool;
+    permitted_states = [ Negotiating; Connected; Closed ];
+    shortdesc = "see if extended headers are in use";
+    longdesc = "\
+After connecting you may call this to find out if the connection is
+using extended headers.
+
+When extended headers are not in use, commands are limited to a
+32-bit length, even when the libnbd API uses a 64-bit parameter
+to express the length.  But even when extended headers are
+supported, the server may enforce other limits, visible through
+L<nbd_get_block_size(3)>.
+
+Note that when extended headers are negotiated, you should
+prefer the use of L<nbd_block_status_64(3)> instead of
+L<nbd_block_status(3)> if any of the meta contexts you requested
+via L<nbd_add_meta_context(3)> might return 64-bit status
+values; however, all of the well-known meta contexts covered
+by current C<LIBNBD_CONTEXT_*> constants only return 32-bit
+status.";
+    see_also = [Link "set_request_extended_headers";
+                Link "get_request_extended_headers";
+                Link "zero"; Link "trim"; Link "cache";
+                Link "block_status_64"; Link "get_block_size";
+                Link "get_protocol";
+                Link "get_structured_replies_negotiated"];
+  };
+
   "set_request_structured_replies", {
     default_call with
     args = [Bool "request"]; ret = RErr;
@@ -821,12 +892,16 @@ for integration testing, it can be useful to clear this flag
 rather than find a way to alter the server to fail the negotiation
 request.  It is also useful to set this to false prior to using
 L<nbd_set_opt_mode(3)> if it is desired to control when to send
-L<nbd_opt_structured_reply(3)> during negotiation.";
+L<nbd_opt_structured_reply(3)> during negotiation.
+
+Note that setting this knob to false also disables any automatic
+request for extended headers.";
     see_also = [Link "get_request_structured_replies";
                 Link "set_handshake_flags"; Link "set_strict_mode";
                 Link "opt_structured_reply";
                 Link "get_structured_replies_negotiated";
-                Link "can_meta_context"; Link "can_df"];
+                Link "can_meta_context"; Link "can_df";
+                Link "set_request_extended_headers"];
   };
 
   "get_request_structured_replies", {
@@ -842,7 +917,8 @@ B<Note:> If you want to find out if structured replies were actually
 negotiated on a particular connection use
 L<nbd_get_structured_replies_negotiated(3)> instead.";
     see_also = [Link "set_request_structured_replies";
-                Link "get_structured_replies_negotiated"];
+                Link "get_structured_replies_negotiated";
+                Link "get_request_extended_headers"];
   };
 
   "get_structured_replies_negotiated", {
@@ -854,11 +930,17 @@ L<nbd_get_structured_replies_negotiated(3)> instead.";
 After connecting you may call this to find out if the connection is
 using structured replies.  Note that this setting is sticky; this
 can return true even after a second L<nbd_opt_structured_reply(3)>
-returns false because the server detected a duplicate request.";
+returns false because the server detected a duplicate request.
+
+Note that if the connection negotiates extended headers, this
+function returns true (as extended headers imply structured
+replies) even if no explicit request for structured replies was
+attempted.";
     see_also = [Link "set_request_structured_replies";
                 Link "get_request_structured_replies";
                 Link "opt_structured_reply";
-                Link "get_protocol"];
+                Link "get_protocol";
+                Link "get_extended_headers_negotiated"];
   };
 
   "set_request_meta_context", {
@@ -2623,7 +2705,9 @@ The call returns when the command has been acknowledged by the server,
 or there is an error.  Note this will generally return an error
 if L<nbd_can_trim(3)> is false or L<nbd_is_read_only(3)> is true.
 
-Note that not all servers can support a C<count> of 4GiB or larger.
+Note that not all servers can support a C<count> of 4GiB or larger;
+L<nbd_get_extended_headers_negotiated(3)> indicates which servers
+will parse a request larger than 32 bits.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum trim size, although
 a future extension may add a constraint visible in
@@ -2654,7 +2738,9 @@ L<nbd_pread(3)> call.  The server can also silently ignore
 this command.  Note this will generally return an error if
 L<nbd_can_cache(3)> is false.
 
-Note that not all servers can support a C<count> of 4GiB or larger.
+Note that not all servers can support a C<count> of 4GiB or larger;
+L<nbd_get_extended_headers_negotiated(3)> indicates which servers
+will parse a request larger than 32 bits.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum cache size, although
 a future extension may add a constraint visible in
@@ -2683,7 +2769,9 @@ The call returns when the command has been acknowledged by the server,
 or there is an error.  Note this will generally return an error if
 L<nbd_can_zero(3)> is false or L<nbd_is_read_only(3)> is true.
 
-Note that not all servers can support a C<count> of 4GiB or larger.
+Note that not all servers can support a C<count> of 4GiB or larger;
+L<nbd_get_extended_headers_negotiated(3)> indicates which servers
+will parse a request larger than 32 bits.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum zero size, although
 a future extension may add a constraint visible in
@@ -2723,7 +2811,9 @@ may extend beyond the requested range. If multiple contexts
 are supported, the number of blocks and cumulative length
 of those blocks need not be identical between contexts.
 
-Note that not all servers can support a C<count> of 4GiB or larger.
+Note that not all servers can support a C<count> of 4GiB or larger;
+L<nbd_get_extended_headers_negotiated(3)> indicates which servers
+will parse a request larger than 32 bits.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum block status size,
 although a future extension may add a constraint visible in
@@ -2801,7 +2891,9 @@ may extend beyond the requested range. If multiple contexts
 are supported, the number of blocks and cumulative length
 of those blocks need not be identical between contexts.
 
-Note that not all servers can support a C<count> of 4GiB or larger.
+Note that not all servers can support a C<count> of 4GiB or larger;
+L<nbd_get_extended_headers_negotiated(3)> indicates which servers
+will parse a request larger than 32 bits.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum block status size,
 although a future extension may add a constraint visible in
@@ -4024,6 +4116,9 @@ let first_version = [
   (* Added in 1.17.x development cycle, will be stable and supported in 1.18. *)
   "block_status_64", (1, 18);
   "aio_block_status_64", (1, 18);
+  "set_request_extended_headers", (1, 18);
+  "get_request_extended_headers", (1, 18);
+  "get_extended_headers_negotiated", (1, 18);
 
   (* These calls are proposed for a future version of libnbd, but
    * have not been added to any released version so far.

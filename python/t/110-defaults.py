@@ -21,6 +21,7 @@ h = nbd.NBD()
 assert h.get_export_name() == ""
 assert h.get_full_info() is False
 assert h.get_tls() == nbd.TLS_DISABLE
+assert h.get_request_extended_headers() is True
 assert h.get_request_structured_replies() is True
 assert h.get_request_meta_context() is True
 assert h.get_request_block_size() is True

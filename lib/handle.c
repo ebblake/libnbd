@@ -67,6 +67,7 @@ nbd_create (void)
 
   h->unique = 1;
   h->tls_verify_peer = true;
+  h->request_eh = true;
   h->request_sr = true;
   h->request_meta = true;
   h->request_block_size = true;
@@ -438,6 +439,28 @@ nbd_unlocked_clear_meta_contexts (struct nbd_handle *h)
 {
   string_vector_empty (&h->request_meta_contexts);
   return 0;
+}
+
+
+int
+nbd_unlocked_set_request_extended_headers (struct nbd_handle *h,
+                                           bool request)
+{
+  h->request_eh = request;
+  return 0;
+}
+
+/* NB: may_set_error = false. */
+int
+nbd_unlocked_get_request_extended_headers (struct nbd_handle *h)
+{
+  return h->request_eh;
+}
+
+int
+nbd_unlocked_get_extended_headers_negotiated (struct nbd_handle *h)
+{
+  return h->extended_headers;
 }
 
 int

@@ -51,6 +51,14 @@ func Test110Defaults(t *testing.T) {
 		t.Fatalf("unexpected tls state")
 	}
 
+	eh, err := h.GetRequestExtendedHeaders()
+	if err != nil {
+		t.Fatalf("could not get extended headers state: %s", err)
+	}
+	if eh != true {
+		t.Fatalf("unexpected extended headers state")
+	}
+
 	sr, err := h.GetRequestStructuredReplies()
 	if err != nil {
 		t.Fatalf("could not get structured replies state: %s", err)

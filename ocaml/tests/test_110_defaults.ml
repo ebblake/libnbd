@@ -26,6 +26,8 @@ let () =
       assert (not info);
       let tls = NBD.get_tls nbd in
       assert (tls = NBD.TLS.DISABLE);
+      let eh = NBD.get_request_extended_headers nbd in
+      assert (eh = true);
       let sr = NBD.get_request_structured_replies nbd in
       assert sr;
       let meta = NBD.get_request_meta_context nbd in

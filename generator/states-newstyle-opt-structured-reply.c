@@ -25,7 +25,7 @@ STATE_MACHINE {
     assert (h->opt_mode);
   else {
     assert (CALLBACK_IS_NULL (h->opt_cb.completion));
-    if (!h->request_sr) {
+    if (!h->request_sr || h->structured_replies) {
       if (h->opt_mode)
         SET_NEXT_STATE (%.NEGOTIATING);
       else
@@ -84,6 +84,7 @@ STATE_MACHINE {
     err = 0;
     break;
   case NBD_REP_ERR_INVALID:
+  case NBD_REP_ERR_EXT_HEADER_REQD:
     err = EINVAL;
     /* fallthrough */
   default:

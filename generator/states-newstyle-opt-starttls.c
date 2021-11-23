@@ -86,6 +86,7 @@ STATE_MACHINE {
     }
     nbd_internal_reset_size_and_flags (h);
     h->structured_replies = false;
+    h->extended_headers = false;
     h->meta_valid = false;
     new_sock = nbd_internal_crypto_create_session (h, h->sock);
     if (new_sock == NULL) {

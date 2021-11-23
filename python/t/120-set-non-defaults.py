@@ -31,6 +31,8 @@ assert h.get_tls() == nbd.TLS_DISABLE
 if h.supports_tls():
     h.set_tls(nbd.TLS_ALLOW)
     assert h.get_tls() == nbd.TLS_ALLOW
+h.set_request_extended_headers(False)
+assert h.get_request_extended_headers() is False
 h.set_request_structured_replies(False)
 assert h.get_request_structured_replies() is False
 h.set_request_meta_context(False)
