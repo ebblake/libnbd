@@ -133,6 +133,27 @@ nbd_internal_ocaml_alloc_i64_from_u32_array (uint32_t *a, size_t len)
   CAMLreturn (rv);
 }
 
+value
+nbd_internal_ocaml_alloc_extent64_array (nbd_extent *a, size_t len)
+{
+  CAMLparam0 ();
+  CAMLlocal3 (s, v, rv);
+  size_t i;
+
+  rv = caml_alloc (len, 0);
+  for (i = 0; i < len; ++i) {
+    s = caml_alloc (2, 0);
+    assert (a[i].length <= INT64_MAX);  /* API ensures size fits in 63 bits */
+    v = caml_copy_int64 (a[i].length);
+    Store_field (s, 0, v);
+    v = caml_copy_int64 (a[i].flags);
+    Store_field (s, 1, v);
+    Store_field (rv, i, s);
+  }
+
+  CAMLreturn (rv);
+}
+
 /* Convert a Unix.sockaddr to a C struct sockaddr. */
 void
 nbd_internal_unix_sockaddr_to_sa (value sockaddrv,

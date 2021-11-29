@@ -44,7 +44,7 @@ and ocaml_arg_to_string = function
   | Closure { cbargs } ->
      sprintf "(%s)" (ocaml_closuredecl_to_string cbargs)
   | Enum (_, { enum_prefix }) -> sprintf "%s.t" enum_prefix
-  | Extent64 _ -> assert false (* only used in extent64_closure *)
+  | Extent64 _ -> "extent"
   | Fd _ -> "Unix.file_descr"
   | Flags (_, { flag_prefix }) -> sprintf "%s.t list" flag_prefix
   | Int _ -> "int"
@@ -148,6 +148,9 @@ exception Closed of string
 (** Exception thrown if you call a closed handle. *)
 
 type cookie = int64
+
+type extent = int64 * int64
+(** Length and flags of an extent in {!block_status_64} callback. *)
 
 ";
 
@@ -270,6 +273,7 @@ let generate_ocaml_nbd_ml () =
 exception Error of string * Unix.error option
 exception Closed of string
 type cookie = int64
+type extent = int64 * int64
 
 (* Give the exceptions names so that they can be raised from the C code. *)
 let () =
@@ -500,7 +504,7 @@ let print_ocaml_closure_wrapper { cbname; cbargs } =
   let argnames =
     List.map (
       function
-      | CBArrayAndLen (UInt32 n, _) | CBBytesIn (n, _)
+      | CBArrayAndLen ((UInt32 n | Extent64 n), _) | CBBytesIn (n, _)
       | CBInt n | CBInt64 n
       | CBMutable (Int n) | CBString n | CBUInt n | CBUInt64 n ->
          n ^ "v"
@@ -533,6 +537,14 @@ let print_ocaml_closure_wrapper { cbname; cbargs } =
        pr "%s  %s,\n" indent n;
        pr "%s  %s\n" indent count;
        pr "%s);\n" indent
+    | CBArrayAndLen (Extent64 n, count) ->
+       pr "  %sv = " n;
+       let fncol = output_column () in
+       let indent = spaces fncol in
+       pr "nbd_internal_ocaml_alloc_extent64_array (\n";
+       pr "%s  %s,\n" indent n;
+       pr "%s  %s\n" indent count;
+       pr "%s);\n" indent
     | CBBytesIn (n, len) ->
        pr "  %sv = caml_alloc_initialized_string (%s, %s);\n" n len n
     | CBInt n | CBUInt n ->
@@ -556,7 +568,7 @@ let print_ocaml_closure_wrapper { cbname; cbargs } =
 
   List.iter (
     function
-    | CBArrayAndLen (UInt32 _, _)
+    | CBArrayAndLen ((UInt32 _ | Extent64 _), _)
     | CBBytesIn _
     | CBInt _
     | CBInt64 _
