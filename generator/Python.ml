@@ -169,7 +169,7 @@ let print_python_closure_wrapper { cbname; cbargs } =
   pr "  PyObject *py_args, *py_ret;\n";
   List.iter (
     function
-    | CBArrayAndLen (UInt32 n, _)
+    | CBArrayAndLen ((UInt32 n | Extent64 n), _)
     | CBBytesIn (n, _)
     | CBMutable (Int n) ->
        pr "  PyObject *py_%s = NULL;\n" n
@@ -184,6 +184,18 @@ let print_python_closure_wrapper { cbname; cbargs } =
        pr "  size_t i_%s;\n" n;
        pr "  for (i_%s = 0; i_%s < %s; ++i_%s) {\n" n n len n;
        pr "    PyObject *py_e_%s = PyLong_FromUnsignedLong (%s[i_%s]);\n" n n n;
+       pr "    if (!py_e_%s) { PyErr_PrintEx (0); goto out; }\n" n;
+       pr "    PyList_SET_ITEM (py_%s, i_%s, py_e_%s);\n" n n n;
+       pr "  }\n"
+    | CBArrayAndLen (Extent64 n, len) ->
+       pr "  py_%s = PyList_New (%s);\n" n len;
+       pr "  if (!py_%s) { PyErr_PrintEx (0); goto out; }\n" n;
+       pr "  size_t i_%s;\n" n;
+       pr "  for (i_%s = 0; i_%s < %s; ++i_%s) {\n" n n len n;
+       pr "    PyObject *py_e_%s = Py_BuildValue (" n;
+       pr_wrap ',' (fun () ->
+           pr "\"KK\", %s[i_%s].length, %s[i_%s].flags" n n n n);
+       pr ");\n";
        pr "    if (!py_e_%s) { PyErr_PrintEx (0); goto out; }\n" n;
        pr "    PyList_SET_ITEM (py_%s, i_%s, py_e_%s);\n" n n n;
        pr "  }\n"
@@ -205,7 +217,7 @@ let print_python_closure_wrapper { cbname; cbargs } =
   let params =
     List.map (
       function
-      | CBArrayAndLen (UInt32 n, _) -> "O", sprintf "py_%s" n
+      | CBArrayAndLen ((UInt32 n | Extent64 n), _) -> "O", sprintf "py_%s" n
       | CBBytesIn (n, _) -> "O", sprintf "py_%s" n
       | CBInt n -> "i", n
       | CBInt64 n -> "L", n
@@ -254,7 +266,7 @@ let print_python_closure_wrapper { cbname; cbargs } =
   pr " out:\n";
   List.iter (
     function
-    | CBArrayAndLen (UInt32 n, _) ->
+    | CBArrayAndLen ((UInt32 n | Extent64 n), _) ->
        pr "  Py_XDECREF (py_%s);\n" n
     | CBBytesIn (n, _) ->
        pr "  Py_XDECREF (py_%s);\n" n
