@@ -523,6 +523,16 @@ func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
     }
     return ret
 }
+
+func copy_extent_array(entries *C.nbd_extent, count C.size_t) []LibnbdExtent {
+    ret := make([]LibnbdExtent, count)
+    s := unsafe.Slice(entries, count)
+    for i, item := range s {
+        ret[i].Length = uint64(item.length)
+        ret[i].Flags = uint64(item.flags)
+    }
+    return ret
+}
 ";
 
   List.iter (
@@ -537,6 +547,8 @@ func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
           match cbarg with
           | CBArrayAndLen (UInt32 n, _) ->
              pr "%s []uint32" n;
+          | CBArrayAndLen (Extent64 n, _) ->
+             pr "%s []LibnbdExtent" n;
           | CBBytesIn (n, len) ->
              pr "%s []byte" n;
           | CBInt n ->
@@ -563,6 +575,8 @@ func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
           match cbarg with
           | CBArrayAndLen (UInt32 n, count) ->
              pr "%s *C.uint32_t, %s C.size_t" n count
+          | CBArrayAndLen (Extent64 n, count) ->
+             pr "%s *C.nbd_extent, %s C.size_t" n count
           | CBBytesIn (n, len) ->
              pr "%s unsafe.Pointer, %s C.size_t" n len
           | CBInt n ->
@@ -605,6 +619,8 @@ func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
           match cbarg with
           | CBArrayAndLen (UInt32 n, count) ->
              pr "copy_uint32_array(%s, %s)" n count
+          | CBArrayAndLen (Extent64 n, count) ->
+             pr "copy_extent_array(%s, %s)" n count
           | CBBytesIn (n, len) ->
              pr "C.GoBytes(%s, C.int(%s))" n len
           | CBInt n ->
@@ -755,6 +771,8 @@ missing_function (struct error *err, const char *fn)
            match cbarg with
            | CBArrayAndLen (UInt32 n, count) ->
               pr "uint32_t *%s, size_t %s" n count
+           | CBArrayAndLen (Extent64 n, count) ->
+              pr "nbd_extent *%s, size_t %s" n count
            | CBBytesIn (n, len) ->
               pr "void *%s, size_t %s" n len
            | CBInt n ->

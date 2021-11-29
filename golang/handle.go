@@ -58,6 +58,12 @@ func (h *Libnbd) String() string {
 	return "&Libnbd{}"
 }
 
+/* Used for block status callback. */
+type LibnbdExtent struct {
+	Length uint64 // length of the extent
+	Flags  uint64 // flags describing properties of the extent
+}
+
 /* All functions (except Close) return ([result,] LibnbdError). */
 type LibnbdError struct {
 	Op     string        // operation which failed
