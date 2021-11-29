@@ -52,6 +52,9 @@ and arg =
 | BytesPersistOut of string * string
 | Closure of closure       (** function pointer + void *opaque *)
 | Enum of string * enum    (** enum/union type, int in C *)
+| Extent64 of string       (** extent descriptor, with 63-bit size and
+                               64-bit flags; struct nbd_extent in C,
+                               tuple or pair in other languages *)
 | Fd of string             (** file descriptor *)
 | Flags of string * flags  (** flags, uint32_t in C *)
 | Int of string            (** small int *)

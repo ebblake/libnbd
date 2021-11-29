@@ -39,6 +39,7 @@ let arg_types : arg -> string list = function
   | BytesIn (n1, n2) | BytesPersistIn (n1, n2) -> [ "*const c_void"; "usize" ]
   | BytesOut (n1, n2) | BytesPersistOut (n1, n2) -> [ "*mut c_void"; "usize" ]
   | Closure { cbname } -> [ sprintf "nbd_%s_callback" cbname ]
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (** The type of an optional argument. *)
 let optarg_type : optarg -> string = function
@@ -99,6 +100,7 @@ let arg_names : arg -> string list = function
   | BytesOut (n1, n2)
   | BytesPersistOut (n1, n2) ->
       [ n1; n2 ]
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (** The name of an optional argument. *)
 let optarg_name : optarg -> string = function

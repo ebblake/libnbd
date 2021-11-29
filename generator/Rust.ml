@@ -116,6 +116,7 @@ let rust_arg_name : arg -> string = function
   | BytesPersistOut (n, _)
   | Closure { cbname = n } ->
       n
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (* Get the name of a rust optional argument. *)
 let rust_optarg_name : optarg -> string = function
@@ -150,6 +151,7 @@ let rec rust_arg_type : arg -> string = function
   | BytesPersistIn _ -> "&'static [u8]"
   | BytesPersistOut _ -> "&'static mut [u8]"
   | Closure { cbargs } -> "impl " ^ rust_closure_trait cbargs
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (* Get the Rust closure trait for a callback, That is `Fn*(...) -> ...)`. *)
 and rust_closure_trait ?(lifetime = Some "'static") cbargs : string =
@@ -203,6 +205,7 @@ let ffi_arg_names : arg -> string list = function
   | BytesOut (n1, n2)
   | BytesPersistOut (n1, n2) ->
       [ n1 ^ "_ffi"; n2 ^ "_ffi" ]
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 let ffi_optarg_name : optarg -> string = function
   | OClosure { cbname = name } | OFlags (name, _, _) -> name ^ "_ffi"
@@ -336,6 +339,7 @@ let rust_arg_to_ffi arg =
       let ffi_name = match ffi_names with [ x ] -> x | _ -> assert false in
       pr "let %s = unsafe { crate::bindings::%s_to_raw(%s) };\n" ffi_name
         rust_name rust_name
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (* Same as [rust_arg_to_ffi] but for optional arguments. *)
 let rust_optarg_to_ffi arg =

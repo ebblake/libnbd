@@ -94,6 +94,7 @@ let name_of_arg =
   | Closure { cbname } ->
      [ sprintf "%s_callback" cbname; sprintf "%s_user_data" cbname ]
   | Enum (n, _) -> [n]
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
   | Fd n -> [n]
   | Flags (n, _) -> [n]
   | Int n -> [n]
@@ -132,6 +133,7 @@ let arg_attr_nonnull =
   | Bool _ | Closure _ | Enum _ | Fd _ | Flags _
   | Int _ | Int64 _ | SizeT _
   | UInt _ | UInt32 _ | UInt64 _ | UIntPtr _ -> [ false ]
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 let optarg_attr_nonnull (OClosure _ | OFlags _) = [ false ]
 
@@ -191,6 +193,7 @@ and print_arg_list' ?(handle = false) ?(types = true) ?(closure_style = Direct)
       | Enum (n, _) ->
          if types then pr "int ";
          pr "%s" n
+      | Extent64 _ -> assert false (* only used in extent64_closure *)
       | Flags (n, _) ->
          if types then pr "uint32_t ";
          pr "%s" n
@@ -751,6 +754,7 @@ let generate_lib_api_c () =
       | Bool _ | Closure _ | Enum _ | Flags _ | Fd _ | Int _
       | Int64 _ | SizeT _
       | SockAddrAndLen _ | UInt _ | UInt32 _ | UInt64 _ | UIntPtr _ -> ()
+      | Extent64 _ -> assert false (* only used in extent64_closure *)
     ) args;
     let indent =
       if may_set_error then (
@@ -774,6 +778,7 @@ let generate_lib_api_c () =
            pr " %s=\\\"%%s\\\" %s=%%zu" n count
         | Closure { cbname } -> pr " %s=%%s" cbname
         | Enum (n, _) -> pr " %s=%%d" n
+        | Extent64 _ -> assert false (* only used in extent64_closure *)
         | Flags (n, _) -> pr " %s=0x%%x" n
         | Fd n | Int n -> pr " %s=%%d" n
         | Int64 n -> pr " %s=%%\"PRIi64\"" n
@@ -812,6 +817,7 @@ let generate_lib_api_c () =
               pr "%s_printable ? %s_printable : \"\", %s" n n count
            | Closure _ -> pr "\"<fun>\""
            | Enum (n, _) -> pr "%s" n
+           | Extent64 _ -> assert false (* only used in extent64_closure *)
            | Flags (n, _) -> pr "%s" n
            | Fd n | Int n | Int64 n | SizeT n -> pr "%s" n
            | SockAddrAndLen (_, len) -> pr "(int) %s" len
@@ -847,6 +853,7 @@ let generate_lib_api_c () =
       | Bool _ | Closure _ | Enum _ | Flags _ | Fd _ | Int _
       | Int64 _ | SizeT _
       | SockAddrAndLen _ | UInt _ | UInt32 _ | UInt64 _ | UIntPtr _ -> ()
+      | Extent64 _ -> assert false (* only used in extent64_closure *)
     ) args;
     pr "  }\n"
   (* Print the trace when we leave a call with debugging enabled. *)

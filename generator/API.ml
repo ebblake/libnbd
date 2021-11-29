@@ -42,6 +42,7 @@ and arg =
 | BytesPersistOut of string * string
 | Closure of closure
 | Enum of string * enum
+| Extent64 of string
 | Fd of string
 | Flags of string * flags
 | Int of string
@@ -157,6 +158,14 @@ let extent_closure = {
                             "nr_entries");
              CBMutable (Int "error") ]
 }
+let extent64_closure = {
+  cbname = "extent64";
+  cbargs = [ CBString "metacontext";
+             CBUInt64 "offset";
+             CBArrayAndLen (Extent64 "entries",
+                            "nr_entries");
+             CBMutable (Int "error") ]
+}
 let list_closure = {
   cbname = "list";
   cbargs = [ CBString "name"; CBString "description" ]
@@ -166,7 +175,8 @@ let context_closure = {
   cbargs = [ CBString "name" ]
 }
 let all_closures = [ chunk_closure; completion_closure;
-                     debug_closure; extent_closure; list_closure;
+                     debug_closure; extent_closure; (* extent64_closure; *)
+                     list_closure;
                      context_closure ]
 
 (* Enums. *)

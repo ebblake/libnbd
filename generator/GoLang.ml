@@ -38,6 +38,7 @@ let go_name_of_arg = function
   | BytesPersistOut (n, len) -> n
   | Closure { cbname } -> cbname
   | Enum (n, _) -> n
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
   | Fd n -> n
   | Flags (n, _) -> n
   | Int n -> n
@@ -60,6 +61,7 @@ let go_arg_type = function
   | BytesPersistOut _ -> "AioBuffer"
   | Closure { cbname } -> sprintf "%sCallback" (camel_case cbname)
   | Enum (_, { enum_prefix }) -> camel_case enum_prefix
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
   | Fd _ -> "int"
   | Flags (_, { flag_prefix }) -> camel_case flag_prefix
   | Int _ -> "int"
@@ -252,6 +254,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
        pr "    c_%s.user_data = C.alloc_cbid(C.long(%s_cbid))\n" cbname cbname
     | Enum (n, _) ->
        pr "    c_%s := C.int(%s)\n" n n
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Fd n ->
        pr "    c_%s := C.int(%s)\n" n n
     | Flags (n, _) ->
@@ -324,6 +327,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
     | BytesPersistOut (n, len) ->  pr ", c_%s, c_%s" n len
     | Closure { cbname } ->  pr ", c_%s" cbname
     | Enum (n, _) -> pr ", c_%s" n
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Fd n -> pr ", c_%s" n
     | Flags (n, _) -> pr ", c_%s" n
     | Int n -> pr ", c_%s" n

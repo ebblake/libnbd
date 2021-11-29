@@ -307,6 +307,7 @@ let print_python_binding name { args; optargs; ret; may_set_error } =
            pr ".callback = %s_wrapper, .free = free_user_data" cbname);
        pr " };\n"
     | Enum (n, _) -> pr "  int %s;\n" n
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Flags (n, _) ->
        pr "  uint32_t %s_u32;\n" n;
        pr "  unsigned int %s; /* really uint32_t */\n" n
@@ -363,6 +364,7 @@ let print_python_binding name { args; optargs; ret; may_set_error } =
          "O", sprintf "&%s" n, sprintf "py_%s->buf, py_%s->len" n n
       | Closure { cbname } -> "O", sprintf "&py_%s_fn" cbname, cbname
       | Enum (n, _) -> "i", sprintf "&%s" n, n
+      | Extent64 _ -> assert false (* only used in extent64_closure *)
       | Flags (n, _) -> "I", sprintf "&%s" n, sprintf "%s_u32" n
       | Fd n | Int n -> "i", sprintf "&%s" n, n
       | Int64 n -> "L", sprintf "&%s" n, sprintf "%s_i64" n
@@ -454,6 +456,7 @@ let print_python_binding name { args; optargs; ret; may_set_error } =
          pr "  if (!chunk_user_data->view) goto out;\n"
        )
     | Enum _ -> ()
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Flags (n, _) -> pr "  %s_u32 = %s;\n" n n
     | Fd _ | Int _ -> ()
     | Int64 n -> pr "  %s_i64 = %s;\n" n n
@@ -552,6 +555,7 @@ let print_python_binding name { args; optargs; ret; may_set_error } =
     | Closure { cbname } ->
        pr "  free_user_data (%s_user_data);\n" cbname
     | Enum _ -> ()
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Flags _ -> ()
     | Fd _ | Int _ -> ()
     | Int64 _ -> ()
@@ -882,6 +886,7 @@ class NBD(object):
           | BytesPersistOut (n, _) -> n, None
           | Closure { cbname } -> cbname, None
           | Enum (n, _) -> n, None
+          | Extent64 _ -> assert false (* only used in extent64_closure *)
           | Flags (n, _) -> n, None
           | Fd n | Int n -> n, None
           | Int64 n -> n, None

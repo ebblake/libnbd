@@ -44,6 +44,7 @@ and ocaml_arg_to_string = function
   | Closure { cbargs } ->
      sprintf "(%s)" (ocaml_closuredecl_to_string cbargs)
   | Enum (_, { enum_prefix }) -> sprintf "%s.t" enum_prefix
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
   | Fd _ -> "Unix.file_descr"
   | Flags (_, { flag_prefix }) -> sprintf "%s.t list" flag_prefix
   | Int _ -> "int"
@@ -102,6 +103,7 @@ let ocaml_name_of_arg = function
   | BytesPersistOut (n, len) -> n
   | Closure { cbname } -> cbname
   | Enum (n, _) -> n
+  | Extent64 _ -> assert false (* only used in extent64_closure *)
   | Fd n -> n
   | Flags (n, _) -> n
   | Int n -> n
@@ -695,6 +697,7 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
        pr "  %s_callback.free = free_user_data;\n" cbname
     | Enum (n, { enum_prefix }) ->
        pr "  int %s = %s_val (%sv);\n" n enum_prefix n
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
     | Fd n ->
        pr "  /* OCaml Unix.file_descr is just an int, at least on Unix. */\n";
        pr "  int %s = Int_val (%sv);\n" n n
@@ -792,6 +795,7 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
     | UInt32 _
     | UInt64 _
     | UIntPtr _ -> ()
+    | Extent64 _ -> assert false (* only used in extent64_closure *)
   ) args;
 
   pr "  CAMLreturn (rv);\n";
