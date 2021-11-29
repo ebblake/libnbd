@@ -39,7 +39,7 @@ let arg_types : arg -> string list = function
   | BytesIn (n1, n2) | BytesPersistIn (n1, n2) -> [ "*const c_void"; "usize" ]
   | BytesOut (n1, n2) | BytesPersistOut (n1, n2) -> [ "*mut c_void"; "usize" ]
   | Closure { cbname } -> [ sprintf "nbd_%s_callback" cbname ]
-  | Extent64 _ -> assert false (* only used in extent64_closure *)
+  | Extent64 (_) -> [ "nbd_extent" ]
 
 (** The type of an optional argument. *)
 let optarg_type : optarg -> string = function
@@ -133,12 +133,19 @@ let print_handle_call (name, call) =
     |> String.concat ", ")
     (ret_type call.ret)
 
-(** Print a definition of the "nbd_handle" type. *)
-let print_nbd_handle () =
+(** Print a definition of "nbd_handle" and "nbd_extent" types. *)
+let print_types () =
   pr "#[repr(C)]\n";
   pr "#[derive(Debug, Clone, Copy)]\n";
   pr "pub struct nbd_handle {\n";
   pr "    _unused: [u8; 0],\n";
+  pr "}\n";
+  pr "\n";
+  pr "#[repr(C)]\n";
+  pr "#[derive(Debug, Clone, Copy)]\n";
+  pr "pub struct nbd_extent {\n";
+  pr "    length: u64,\n";
+  pr "    flags: u64,\n";
   pr "}\n";
   pr "\n"
 
@@ -161,7 +168,7 @@ let generate_rust_sys_bindings () =
   generate_header CStyle ~copyright:"Tage Johansson";
   pr "\n";
   print_imports ();
-  print_nbd_handle ();
+  print_types ();
   print_more_defs ();
   all_closures |> List.iter print_closure_struct;
   pr "extern \"C\" {\n";

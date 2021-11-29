@@ -16,3 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 pub struct Cookie(pub(crate) u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NbdExtent {
+    pub length: u64,
+    pub flags: u64,
+}

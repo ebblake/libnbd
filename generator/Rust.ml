@@ -108,6 +108,7 @@ let rust_arg_name : arg -> string = function
   | Path n
   | Fd n
   | Enum (n, _)
+  | Extent64 n
   | Flags (n, _)
   | SockAddrAndLen (n, _)
   | BytesIn (n, _)
@@ -116,7 +117,6 @@ let rust_arg_name : arg -> string = function
   | BytesPersistOut (n, _)
   | Closure { cbname = n } ->
       n
-  | Extent64 _ -> assert false (* only used in extent64_closure *)
 
 (* Get the name of a rust optional argument. *)
 let rust_optarg_name : optarg -> string = function
@@ -151,7 +151,7 @@ let rec rust_arg_type : arg -> string = function
   | BytesPersistIn _ -> "&'static [u8]"
   | BytesPersistOut _ -> "&'static mut [u8]"
   | Closure { cbargs } -> "impl " ^ rust_closure_trait cbargs
-  | Extent64 _ -> assert false (* only used in extent64_closure *)
+  | Extent64 _ -> "NbdExtent"
 
 (* Get the Rust closure trait for a callback, That is `Fn*(...) -> ...)`. *)
 and rust_closure_trait ?(lifetime = Some "'static") cbargs : string =
@@ -232,6 +232,7 @@ let ffi_cbarg_types : cbarg -> string list = function
   | CBString _ -> [ "*const c_char" ]
   | CBBytesIn _ -> [ "*const c_void"; "usize" ]
   | CBArrayAndLen (UInt32 _, _) -> [ "*mut u32"; "usize" ]
+  | CBArrayAndLen (Extent64 _, _) -> [ "*mut nbd_extent"; "usize" ]
   | CBArrayAndLen _ ->
       failwith
         "generator/Rust.ml: in ffi_cbarg_types: Unsupported type of array \
@@ -377,6 +378,9 @@ let ffi_cbargs_to_rust cbarg =
         ffi_len_name
   | CBArrayAndLen (UInt32 _, _), [ ffi_arr_name; ffi_len_name ] ->
       pr "slice::from_raw_parts(%s, %s)" ffi_arr_name ffi_len_name
+  | CBArrayAndLen (Extent64 _, _), [ ffi_arr_name; ffi_len_name ] ->
+      pr "slice::from_raw_parts(%s as *const NbdExtent, %s)"
+        ffi_arr_name ffi_len_name
   | CBArrayAndLen _, [ _; _ ] ->
       failwith
         "generator/Rust.ml: in ffi_cbargs_to_rust: Unsupported type of array \
@@ -553,6 +557,7 @@ let print_rust_imports () =
   pr "use std::path::PathBuf;\n";
   pr "use std::ptr;\n";
   pr "use std::slice;\n";
+  (* pr "use libnbd_sys::nbd_extent;\n"; uncomment for extent64_callback *)
   pr "\n"
 
 let generate_rust_bindings () =
