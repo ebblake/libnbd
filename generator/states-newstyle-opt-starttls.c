@@ -26,7 +26,7 @@ STATE_MACHINE {
   else {
     /* If TLS was not requested we skip this option and go to the next one. */
     if (h->tls == LIBNBD_TLS_DISABLE) {
-      SET_NEXT_STATE (%^OPT_STRUCTURED_REPLY.START);
+      SET_NEXT_STATE (%^OPT_EXTENDED_HEADERS.START);
       return 0;
     }
     assert (CALLBACK_IS_NULL (h->opt_cb.completion));
@@ -128,7 +128,7 @@ STATE_MACHINE {
       SET_NEXT_STATE (%.NEGOTIATING);
     else {
       debug (h, "continuing with unencrypted connection");
-      SET_NEXT_STATE (%^OPT_STRUCTURED_REPLY.START);
+      SET_NEXT_STATE (%^OPT_EXTENDED_HEADERS.START);
     }
     return 0;
   }
@@ -185,7 +185,7 @@ STATE_MACHINE {
   if (h->opt_current == NBD_OPT_STARTTLS)
     SET_NEXT_STATE (%.NEGOTIATING);
   else
-    SET_NEXT_STATE (%^OPT_STRUCTURED_REPLY.START);
+    SET_NEXT_STATE (%^OPT_EXTENDED_HEADERS.START);
   return 0;
 
 } /* END STATE MACHINE */

@@ -297,6 +297,7 @@ and newstyle_state_machine = [
    * NEGOTIATING after OPT_STRUCTURED_REPLY or any failed OPT_GO.
    *)
   Group ("OPT_STARTTLS", newstyle_opt_starttls_state_machine);
+  Group ("OPT_EXTENDED_HEADERS", newstyle_opt_extended_headers_state_machine);
   Group ("OPT_STRUCTURED_REPLY", newstyle_opt_structured_reply_state_machine);
   Group ("OPT_META_CONTEXT", newstyle_opt_meta_context_state_machine);
   Group ("OPT_GO", newstyle_opt_go_state_machine);
@@ -437,6 +438,46 @@ and newstyle_opt_list_state_machine = [
     default_state with
     name = "CHECK_REPLY";
     comment = "Check NBD_REP_SERVER reply";
+    external_events = [];
+  };
+]
+
+(* Fixed newstyle NBD_OPT_EXTENDED_HEADERS option.
+ * Implementation: generator/states-newstyle-opt-extended-headers.c
+ *)
+and newstyle_opt_extended_headers_state_machine = [
+  State {
+    default_state with
+    name = "START";
+    comment = "Try to negotiate newstyle NBD_OPT_EXTENDED_HEADERS";
+    external_events = [];
+  };
+
+  State {
+    default_state with
+    name = "SEND";
+    comment = "Send newstyle NBD_OPT_EXTENDED_HEADERS negotiation request";
+    external_events = [ NotifyWrite, "" ];
+  };
+
+  State {
+    default_state with
+    name = "RECV_REPLY";
+    comment = "Receive newstyle NBD_OPT_EXTENDED_HEADERS option reply";
+    external_events = [ NotifyRead, "" ];
+  };
+
+  State {
+    default_state with
+    name = "RECV_REPLY_PAYLOAD";
+    comment = "Receive any newstyle NBD_OPT_EXTENDED_HEADERS reply payload";
+    external_events = [ NotifyRead, "" ];
+  };
+
+  State {
+    default_state with
+    name = "CHECK_REPLY";
+    comment = "Check newstyle NBD_OPT_EXTENDED_HEADERS option reply";
     external_events = [];
   };
 ]
