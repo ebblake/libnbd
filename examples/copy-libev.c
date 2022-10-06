@@ -96,7 +96,7 @@ struct request {
 };
 
 struct extent {
-    uint32_t length;
+    uint64_t length;
     bool zero;
 };
 
@@ -184,7 +184,7 @@ get_events (struct connection *c)
 
 static int
 extent_callback (void *user_data, const char *metacontext, uint64_t offset,
-                 uint32_t *entries, size_t nr_entries, int *error)
+                 nbd_extent *entries, size_t nr_entries, int *error)
 {
     struct request *r = user_data;
 
@@ -199,22 +199,21 @@ extent_callback (void *user_data, const char *metacontext, uint64_t offset,
         return 1;
     }
 
-    /* Libnbd returns uint32_t pair (length, flags) for each extent. */
-    extents_len = nr_entries / 2;
+    extents_len = nr_entries;
 
     extents = malloc (extents_len * sizeof *extents);
     if (extents == NULL)
         FAIL ("Cannot allocated extents: %s", strerror (errno));
 
     /* Copy libnbd entries to extents array. */
-    for (int i = 0, j = 0; i < extents_len; i++, j=i*2) {
-        extents[i].length = entries[j];
+    for (int i = 0; i < extents_len; i++) {
+        extents[i].length = entries[i].length;
 
         /* Libnbd exposes both ZERO and HOLE flags. We care only about
          * ZERO status, meaning we can copy this extent using efficinet
          * zero method.
          */
-        extents[i].zero = (entries[j + 1] & LIBNBD_STATE_ZERO) != 0;
+        extents[i].zero = (entries[i].flags & LIBNBD_STATE_ZERO) != 0;
     }
 
     DEBUG ("r%zu: received %zu extents for %s",
@@ -286,10 +285,10 @@ start_extents (struct request *r)
     DEBUG ("r%zu: start extents offset=%" PRIi64 " count=%zu",
            r->index, offset, count);
 
-    cookie = nbd_aio_block_status (
+    cookie = nbd_aio_block_status_64 (
         src.nbd, count, offset,
-        (nbd_extent_callback) { .callback=extent_callback,
-                                .user_data=r },
+        (nbd_extent64_callback) { .callback=extent_callback,
+                                  .user_data=r },
         (nbd_completion_callback) { .callback=extents_completed,
                                     .user_data=r },
         0);
@@ -324,7 +323,7 @@ next_extent (struct request *r)
         limit = MIN (REQUEST_SIZE, size - offset);
 
     while (length < limit) {
-        DEBUG ("e%zu: offset=%" PRIi64 " len=%" PRIu32 " zero=%d",
+        DEBUG ("e%zu: offset=%" PRIi64 " len=%" PRIu64 " zero=%d",
                extents_pos, offset, extents[extents_pos].length, is_zero);
 
         /* If this extent is too large, steal some data from it to
