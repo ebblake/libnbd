@@ -38,7 +38,7 @@
 #include "version.h"
 #include "vector.h"
 
-DEFINE_VECTOR_TYPE (uint32_vector, uint32_t);
+DEFINE_VECTOR_TYPE (uint64_vector, uint64_t);
 
 static const char *progname;
 static struct nbd_handle *nbd;
@@ -262,10 +262,10 @@ catch_signal (int sig)
 static int
 extent_callback (void *user_data, const char *metacontext,
                  uint64_t offset,
-                 uint32_t *entries, size_t nr_entries,
+                 nbd_extent *entries, size_t nr_entries,
                  int *error)
 {
-  uint32_vector *list = user_data;
+  uint64_vector *list = user_data;
   size_t i;
 
   if (strcmp (metacontext, LIBNBD_CONTEXT_BASE_ALLOCATION) != 0)
@@ -273,7 +273,8 @@ extent_callback (void *user_data, const char *metacontext,
 
   /* Just append the entries we got to the list. */
   for (i = 0; i < nr_entries; ++i) {
-    if (uint32_vector_append (list, entries[i]) == -1) {
+    if (uint64_vector_append (list, entries[i].length) == -1 ||
+        uint64_vector_append (list, entries[i].flags) == -1) {
       perror ("realloc");
       exit (EXIT_FAILURE);
     }
@@ -284,7 +285,7 @@ extent_callback (void *user_data, const char *metacontext,
 static bool
 test_all_zeroes (uint64_t offset, size_t count)
 {
-  uint32_vector entries = empty_vector;
+  uint64_vector entries = empty_vector;
   size_t i;
   uint64_t count_read;
 
@@ -296,22 +297,22 @@ test_all_zeroes (uint64_t offset, size_t count)
    * false, causing the main code to do a full read.  We could be
    * smarter and keep asking the server (XXX).
    */
-  if (nbd_block_status (nbd, count, offset,
-                        (nbd_extent_callback) {
-                          .callback = extent_callback,
-                          .user_data = &entries },
-                        0) == -1) {
+  if (nbd_block_status_64 (nbd, count, offset,
+                           (nbd_extent64_callback) {
+                             .callback = extent_callback,
+                             .user_data = &entries },
+                           0) == -1) {
     fprintf (stderr, "%s: %s\n", progname, nbd_get_error ());
     exit (EXIT_FAILURE);
   }
 
   count_read = 0;
   for (i = 0; i < entries.len; i += 2) {
-    uint32_t len = entries.ptr[i];
-    uint32_t type = entries.ptr[i+1];
+    uint64_t len = entries.ptr[i];
+    uint64_t type = entries.ptr[i+1];
 
     count_read += len;
-    if (!(type & 2))            /* not zero */
+    if (!(type & LIBNBD_STATE_ZERO))            /* not zero */
       return false;
   }
 
