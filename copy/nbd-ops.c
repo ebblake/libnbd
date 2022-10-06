@@ -428,7 +428,7 @@ nbd_ops_asynch_notify_write (struct rw *rw, size_t index)
  * request for extents in a single round trip.
  */
 static int add_extent (void *vp, const char *metacontext,
-                       uint64_t offset, uint32_t *entries, size_t nr_entries,
+                       uint64_t offset, nbd_extent *entries, size_t nr_entries,
                        int *error);
 
 static void
@@ -449,11 +449,11 @@ nbd_ops_get_extents (struct rw *rw, size_t index,
     size_t i;
 
     exts.len = 0;
-    if (nbd_block_status (nbd, count, offset,
-                          (nbd_extent_callback) {
-                            .user_data = &exts,
-                            .callback = add_extent
-                          }, 0) == -1) {
+    if (nbd_block_status_64 (nbd, count, offset,
+                             (nbd_extent64_callback) {
+                               .user_data = &exts,
+                               .callback = add_extent
+                             }, 0) == -1) {
       /* XXX We could call default_get_extents, but unclear if it's
        * the right thing to do if the server is returning errors.
        */
@@ -496,7 +496,7 @@ nbd_ops_get_extents (struct rw *rw, size_t index,
 
 static int
 add_extent (void *vp, const char *metacontext,
-            uint64_t offset, uint32_t *entries, size_t nr_entries,
+            uint64_t offset, nbd_extent *entries, size_t nr_entries,
             int *error)
 {
   extent_list *ret = vp;
@@ -505,25 +505,25 @@ add_extent (void *vp, const char *metacontext,
   if (strcmp (metacontext, "base:allocation") != 0 || *error)
     return 0;
 
-  for (i = 0; i < nr_entries; i += 2) {
+  for (i = 0; i < nr_entries; i++) {
     struct extent e;
 
     e.offset = offset;
-    e.length = entries[i];
+    e.length = entries[i].length;
 
     /* Note we deliberately don't care about the HOLE flag.  There is
      * no need to read extent that reads as zeroes.  We will convert
      * to it to a hole or allocated extents based on the command line
      * arguments.
      */
-    e.zero = (entries[i+1] & LIBNBD_STATE_ZERO) != 0;
+    e.zero = (entries[i].flags & LIBNBD_STATE_ZERO) != 0;
 
     if (extent_list_append (ret, e) == -1) {
       perror ("realloc");
       exit (EXIT_FAILURE);
     }
 
-    offset += entries[i];
+    offset += entries[i].length;
   }
 
   return 0;
