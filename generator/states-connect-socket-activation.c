@@ -146,12 +146,12 @@ STATE_MACHINE {
 
   if (listen (s, SOMAXCONN) == -1) {
     set_error (errno, "listen");
-    goto close_socket;
+    goto unlink_sockpath;
   }
 
   if (prepare_socket_activation_environment (&env) == -1)
     /* prepare_socket_activation_environment() calls set_error() internally */
-    goto close_socket;
+    goto unlink_sockpath;
 
   pid = fork ();
   if (pid == -1) {
@@ -219,6 +219,10 @@ STATE_MACHINE {
 
 empty_env:
   string_vector_empty (&env);
+
+unlink_sockpath:
+  if (next == %.DEAD)
+    unlink (sockpath);
 
 close_socket:
   close (s);
