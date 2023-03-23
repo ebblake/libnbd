@@ -238,17 +238,21 @@ STATE_MACHINE {
   return 0;
 
  CONNECT_COMMAND.START:
+  enum state next;
   int sv[2];
   pid_t pid;
   int flags;
+  struct socket *sock;
 
   assert (!h->sock);
   assert (h->argv.ptr);
   assert (h->argv.ptr[0]);
+
+  next = %.DEAD;
+
   if (nbd_internal_socketpair (AF_UNIX, SOCK_STREAM, 0, sv) == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "socketpair");
-    return 0;
+    goto done;
   }
 
   /* A process is effectively in an unusable state if any of STDIN_FILENO
@@ -262,12 +266,10 @@ STATE_MACHINE {
 
   pid = fork ();
   if (pid == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "fork");
-    close (sv[0]);
-    close (sv[1]);
-    return 0;
+    goto close_socket_pair;
   }
+
   if (pid == 0) {         /* child - run command */
     if (close (sv[0]) == -1) {
       nbd_internal_fork_safe_perror ("close");
@@ -299,35 +301,41 @@ STATE_MACHINE {
       _exit (126);
   }
 
-  /* Parent. */
-  close (sv[1]);
-
-  h->pid = pid;
-
-  /* Only the parent-side end of the socket pair must be set to non-blocking,
+  /* Parent.
+   *
+   * Only the parent-side end of the socket pair must be set to non-blocking,
    * because the child may not be expecting a non-blocking socket.
    */
   flags = fcntl (sv[0], F_GETFL, 0);
   if (flags == -1 ||
       fcntl (sv[0], F_SETFL, flags|O_NONBLOCK) == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "fcntl");
-    close (sv[0]);
-    return 0;
+    goto close_socket_pair;
   }
 
-  h->sock = nbd_internal_socket_create (sv[0]);
-  if (!h->sock) {
-    SET_NEXT_STATE (%.DEAD);
+  sock = nbd_internal_socket_create (sv[0]);
+  if (!sock)
     /* nbd_internal_socket_create() calls set_error() internally */
-    close (sv[0]);
-    return 0;
-  }
+    goto close_socket_pair;
+
+  /* Commit. */
+  h->pid = pid;
+  h->sock = sock;
 
   /* The sockets are connected already, we can jump directly to
    * receiving the server magic.
    */
-  SET_NEXT_STATE (%^MAGIC.START);
+  next = %^MAGIC.START;
+
+  /* fall through, for releasing the temporaries */
+
+close_socket_pair:
+  if (next == %.DEAD)
+    close (sv[0]);
+  close (sv[1]);
+
+done:
+  SET_NEXT_STATE (next);
   return 0;
 
 } /* END STATE MACHINE */
