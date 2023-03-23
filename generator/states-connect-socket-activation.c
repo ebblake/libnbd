@@ -51,7 +51,7 @@ prepare_socket_activation_environment (string_vector *env)
   char *p;
   size_t i;
 
-  assert (env->len == 0);
+  *env = (string_vector)empty_vector;
 
   /* Reserve slots env[0] and env[1]. */
   p = strdup ("LISTEN_PID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -99,7 +99,7 @@ STATE_MACHINE {
  CONNECT_SA.START:
   int s;
   struct sockaddr_un addr;
-  string_vector env = empty_vector;
+  string_vector env;
   pid_t pid;
 
   assert (!h->sock);
@@ -156,6 +156,7 @@ STATE_MACHINE {
 
   if (prepare_socket_activation_environment (&env) == -1) {
     SET_NEXT_STATE (%.DEAD);
+    /* prepare_socket_activation_environment() calls set_error() internally */
     close (s);
     return 0;
   }
