@@ -184,7 +184,7 @@ STATE_MACHINE {
         nbd_internal_fork_safe_perror ("fcntl: F_GETFD");
         _exit (126);
       }
-      if (fcntl (s, F_SETFD, flags & ~FD_CLOEXEC) == -1) {
+      if (fcntl (s, F_SETFD, (int)(flags & ~(unsigned)FD_CLOEXEC)) == -1) {
         nbd_internal_fork_safe_perror ("fcntl: F_SETFD");
         _exit (126);
       }
