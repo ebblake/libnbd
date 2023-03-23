@@ -251,6 +251,15 @@ STATE_MACHINE {
     return 0;
   }
 
+  /* A process is effectively in an unusable state if any of STDIN_FILENO
+   * (fd#0), STDOUT_FILENO (fd#1) and STDERR_FILENO (fd#2) don't exist. If they
+   * exist however, then the socket pair created above will not intersect with
+   * the fd set { 0, 1, 2 }. This is relevant for the child-side dup2() logic
+   * below.
+   */
+  assert (sv[0] > STDERR_FILENO);
+  assert (sv[1] > STDERR_FILENO);
+
   pid = fork ();
   if (pid == -1) {
     SET_NEXT_STATE (%.DEAD);
@@ -260,11 +269,11 @@ STATE_MACHINE {
     return 0;
   }
   if (pid == 0) {         /* child - run command */
-    close (STDIN_FILENO);
-    close (STDOUT_FILENO);
     close (sv[0]);
     dup2 (sv[1], STDIN_FILENO);
     dup2 (sv[1], STDOUT_FILENO);
+    NBD_INTERNAL_FORK_SAFE_ASSERT (sv[1] != STDIN_FILENO);
+    NBD_INTERNAL_FORK_SAFE_ASSERT (sv[1] != STDOUT_FILENO);
     close (sv[1]);
 
     /* Restore SIGPIPE back to SIG_DFL. */
