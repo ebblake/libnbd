@@ -269,15 +269,27 @@ STATE_MACHINE {
     return 0;
   }
   if (pid == 0) {         /* child - run command */
-    close (sv[0]);
-    dup2 (sv[1], STDIN_FILENO);
-    dup2 (sv[1], STDOUT_FILENO);
+    if (close (sv[0]) == -1) {
+      nbd_internal_fork_safe_perror ("close");
+      _exit (126);
+    }
+    if (dup2 (sv[1], STDIN_FILENO) == -1 ||
+        dup2 (sv[1], STDOUT_FILENO) == -1) {
+      nbd_internal_fork_safe_perror ("dup2");
+      _exit (126);
+    }
     NBD_INTERNAL_FORK_SAFE_ASSERT (sv[1] != STDIN_FILENO);
     NBD_INTERNAL_FORK_SAFE_ASSERT (sv[1] != STDOUT_FILENO);
-    close (sv[1]);
+    if (close (sv[1]) == -1) {
+      nbd_internal_fork_safe_perror ("close");
+      _exit (126);
+    }
 
     /* Restore SIGPIPE back to SIG_DFL. */
-    signal (SIGPIPE, SIG_DFL);
+    if (signal (SIGPIPE, SIG_DFL) == SIG_ERR) {
+      nbd_internal_fork_safe_perror ("signal");
+      _exit (126);
+    }
 
     execvp (h->argv.ptr[0], h->argv.ptr);
     nbd_internal_fork_safe_perror (h->argv.ptr[0]);
