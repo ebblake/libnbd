@@ -102,6 +102,7 @@ STATE_MACHINE {
   char *sockpath;
   int s;
   struct sockaddr_un addr;
+  struct execvpe execvpe_ctx;
   string_vector env;
   pid_t pid;
 
@@ -149,9 +150,15 @@ STATE_MACHINE {
     goto unlink_sockpath;
   }
 
+  if (nbd_internal_execvpe_init (&execvpe_ctx, h->argv.ptr[0], h->argv.len) ==
+      -1) {
+    set_error (errno, "nbd_internal_execvpe_init");
+    goto unlink_sockpath;
+  }
+
   if (prepare_socket_activation_environment (&env) == -1)
     /* prepare_socket_activation_environment() calls set_error() internally */
-    goto unlink_sockpath;
+    goto uninit_execvpe;
 
   pid = fork ();
   if (pid == -1) {
@@ -197,8 +204,7 @@ STATE_MACHINE {
       _exit (126);
     }
 
-    environ = env.ptr;
-    execvp (h->argv.ptr[0], h->argv.ptr);
+    (void)nbd_internal_fork_safe_execvpe (&execvpe_ctx, &h->argv, env.ptr);
     nbd_internal_fork_safe_perror (h->argv.ptr[0]);
     if (errno == ENOENT)
       _exit (127);
@@ -219,6 +225,9 @@ STATE_MACHINE {
 
 empty_env:
   string_vector_empty (&env);
+
+uninit_execvpe:
+  nbd_internal_execvpe_uninit (&execvpe_ctx);
 
 unlink_sockpath:
   if (next == %.DEAD)
