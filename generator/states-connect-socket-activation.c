@@ -171,8 +171,14 @@ STATE_MACHINE {
   }
   if (pid == 0) {         /* child - run command */
     if (s != FIRST_SOCKET_ACTIVATION_FD) {
-      dup2 (s, FIRST_SOCKET_ACTIVATION_FD);
-      close (s);
+      if (dup2 (s, FIRST_SOCKET_ACTIVATION_FD) == -1) {
+        nbd_internal_fork_safe_perror ("dup2");
+        _exit (126);
+      }
+      if (close (s) == -1) {
+        nbd_internal_fork_safe_perror ("close");
+        _exit (126);
+      }
     }
     else {
       /* We must unset CLOEXEC on the fd.  (dup2 above does this
@@ -196,7 +202,10 @@ STATE_MACHINE {
     strcpy (&env.ptr[0][PREFIX_LENGTH], v);
 
     /* Restore SIGPIPE back to SIG_DFL. */
-    signal (SIGPIPE, SIG_DFL);
+    if (signal (SIGPIPE, SIG_DFL) == SIG_ERR) {
+      nbd_internal_fork_safe_perror ("signal");
+      _exit (126);
+    }
 
     environ = env.ptr;
     execvp (h->argv.ptr[0], h->argv.ptr);
