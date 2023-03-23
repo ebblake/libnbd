@@ -97,6 +97,9 @@ prepare_socket_activation_environment (string_vector *env)
 
 STATE_MACHINE {
  CONNECT_SA.START:
+  enum state next;
+  char *tmpdir;
+  char *sockpath;
   int s;
   struct sockaddr_un addr;
   string_vector env;
@@ -106,69 +109,56 @@ STATE_MACHINE {
   assert (h->argv.ptr);
   assert (h->argv.ptr[0]);
 
+  next = %.DEAD;
+
   /* Use /tmp instead of TMPDIR because we must ensure the path is
    * short enough to store in the sockaddr_un.  On some platforms this
    * may cause problems so we may need to revisit it.  XXX
    */
-  h->sact_tmpdir = strdup ("/tmp/libnbdXXXXXX");
-  if (h->sact_tmpdir == NULL) {
-    SET_NEXT_STATE (%.DEAD);
+  tmpdir = strdup ("/tmp/libnbdXXXXXX");
+  if (tmpdir == NULL) {
     set_error (errno, "strdup");
-    return 0;
-  }
-  if (mkdtemp (h->sact_tmpdir) == NULL) {
-    SET_NEXT_STATE (%.DEAD);
-    set_error (errno, "mkdtemp");
-    /* Avoid cleanup in nbd_close. */
-    free (h->sact_tmpdir);
-    h->sact_tmpdir = NULL;
-    return 0;
+    goto done;
   }
 
-  if (asprintf (&h->sact_sockpath, "%s/sock", h->sact_tmpdir) == -1) {
-    SET_NEXT_STATE (%.DEAD);
+  if (mkdtemp (tmpdir) == NULL) {
+    set_error (errno, "mkdtemp");
+    goto free_tmpdir;
+  }
+
+  if (asprintf (&sockpath, "%s/sock", tmpdir) == -1) {
     set_error (errno, "asprintf");
-    return 0;
+    goto rmdir_tmpdir;
   }
 
   s = nbd_internal_socket (AF_UNIX, SOCK_STREAM, 0, false);
   if (s == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "socket");
-    return 0;
+    goto free_sockpath;
   }
 
   addr.sun_family = AF_UNIX;
-  memcpy (addr.sun_path, h->sact_sockpath, strlen (h->sact_sockpath) + 1);
+  memcpy (addr.sun_path, sockpath, strlen (sockpath) + 1);
   if (bind (s, (struct sockaddr *) &addr, sizeof addr) == -1) {
-    SET_NEXT_STATE (%.DEAD);
-    set_error (errno, "bind: %s", h->sact_sockpath);
-    close (s);
-    return 0;
+    set_error (errno, "bind: %s", sockpath);
+    goto close_socket;
   }
 
   if (listen (s, SOMAXCONN) == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "listen");
-    close (s);
-    return 0;
+    goto close_socket;
   }
 
-  if (prepare_socket_activation_environment (&env) == -1) {
-    SET_NEXT_STATE (%.DEAD);
+  if (prepare_socket_activation_environment (&env) == -1)
     /* prepare_socket_activation_environment() calls set_error() internally */
-    close (s);
-    return 0;
-  }
+    goto close_socket;
 
   pid = fork ();
   if (pid == -1) {
-    SET_NEXT_STATE (%.DEAD);
     set_error (errno, "fork");
-    close (s);
-    string_vector_empty (&env);
-    return 0;
+    goto empty_env;
   }
+
   if (pid == 0) {         /* child - run command */
     if (s != FIRST_SOCKET_ACTIVATION_FD) {
       if (dup2 (s, FIRST_SOCKET_ACTIVATION_FD) == -1) {
@@ -216,13 +206,36 @@ STATE_MACHINE {
       _exit (126);
   }
 
-  /* Parent. */
-  close (s);
-  string_vector_empty (&env);
+  /* Parent -- we're done; commit. */
+  h->sact_tmpdir = tmpdir;
+  h->sact_sockpath = sockpath;
   h->pid = pid;
 
   h->connaddrlen = sizeof addr;
   memcpy (&h->connaddr, &addr, h->connaddrlen);
-  SET_NEXT_STATE (%^CONNECT.START);
+  next = %^CONNECT.START;
+
+  /* fall through, for releasing the temporaries */
+
+empty_env:
+  string_vector_empty (&env);
+
+close_socket:
+  close (s);
+
+free_sockpath:
+  if (next == %.DEAD)
+    free (sockpath);
+
+rmdir_tmpdir:
+  if (next == %.DEAD)
+    rmdir (tmpdir);
+
+free_tmpdir:
+  if (next == %.DEAD)
+    free (tmpdir);
+
+done:
+  SET_NEXT_STATE (next);
   return 0;
 } /* END STATE MACHINE */
