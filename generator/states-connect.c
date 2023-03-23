@@ -283,7 +283,7 @@ STATE_MACHINE {
 
   h->pid = pid;
 
-  /* The socket must be set to non-blocking only in the parent,
+  /* Only the parent-side end of the socket pair must be set to non-blocking,
    * because the child may not be expecting a non-blocking socket.
    */
   flags = fcntl (sv[0], F_GETFL, 0);
