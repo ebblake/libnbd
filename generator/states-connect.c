@@ -260,11 +260,11 @@ STATE_MACHINE {
     return 0;
   }
   if (pid == 0) {         /* child - run command */
-    close (0);
-    close (1);
+    close (STDIN_FILENO);
+    close (STDOUT_FILENO);
     close (sv[0]);
-    dup2 (sv[1], 0);
-    dup2 (sv[1], 1);
+    dup2 (sv[1], STDIN_FILENO);
+    dup2 (sv[1], STDOUT_FILENO);
     close (sv[1]);
 
     /* Restore SIGPIPE back to SIG_DFL. */
