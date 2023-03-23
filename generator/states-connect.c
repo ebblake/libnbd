@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+extern char **environ;
+
 /* Disable Nagle's algorithm on the socket, but don't fail. */
 static void
 disable_nagle (int sock)
@@ -243,6 +245,7 @@ STATE_MACHINE {
   int sv[2];
   int flags;
   struct socket *sock;
+  struct execvpe execvpe_ctx;
   pid_t pid;
 
   assert (!h->sock);
@@ -282,10 +285,16 @@ STATE_MACHINE {
     goto close_socket_pair;
   parentfd_transferred = true;
 
+  if (nbd_internal_execvpe_init (&execvpe_ctx, h->argv.ptr[0], h->argv.len) ==
+      -1) {
+    set_error (errno, "nbd_internal_execvpe_init");
+    goto close_high_level_socket;
+  }
+
   pid = fork ();
   if (pid == -1) {
     set_error (errno, "fork");
-    goto close_high_level_socket;
+    goto uninit_execvpe;
   }
 
   if (pid == 0) {         /* child - run command */
@@ -311,7 +320,7 @@ STATE_MACHINE {
       _exit (126);
     }
 
-    execvp (h->argv.ptr[0], h->argv.ptr);
+    (void)nbd_internal_fork_safe_execvpe (&execvpe_ctx, &h->argv, environ);
     nbd_internal_fork_safe_perror (h->argv.ptr[0]);
     if (errno == ENOENT)
       _exit (127);
@@ -329,6 +338,9 @@ STATE_MACHINE {
   next = %^MAGIC.START;
 
   /* fall through, for releasing the temporaries */
+
+uninit_execvpe:
+  nbd_internal_execvpe_uninit (&execvpe_ctx);
 
 close_high_level_socket:
   if (next == %.DEAD)
