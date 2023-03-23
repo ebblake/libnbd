@@ -290,6 +290,7 @@ STATE_MACHINE {
   if (flags == -1 ||
       fcntl (sv[0], F_SETFL, flags|O_NONBLOCK) == -1) {
     SET_NEXT_STATE (%.DEAD);
+    set_error (errno, "fcntl");
     close (sv[0]);
     return 0;
   }
@@ -297,6 +298,7 @@ STATE_MACHINE {
   h->sock = nbd_internal_socket_create (sv[0]);
   if (!h->sock) {
     SET_NEXT_STATE (%.DEAD);
+    /* nbd_internal_socket_create() calls set_error() internally */
     close (sv[0]);
     return 0;
   }
