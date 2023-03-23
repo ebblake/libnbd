@@ -239,16 +239,18 @@ STATE_MACHINE {
 
  CONNECT_COMMAND.START:
   enum state next;
+  bool parentfd_transferred;
   int sv[2];
-  pid_t pid;
   int flags;
   struct socket *sock;
+  pid_t pid;
 
   assert (!h->sock);
   assert (h->argv.ptr);
   assert (h->argv.ptr[0]);
 
   next = %.DEAD;
+  parentfd_transferred = false;
 
   if (nbd_internal_socketpair (AF_UNIX, SOCK_STREAM, 0, sv) == -1) {
     set_error (errno, "socketpair");
@@ -264,10 +266,26 @@ STATE_MACHINE {
   assert (sv[0] > STDERR_FILENO);
   assert (sv[1] > STDERR_FILENO);
 
+  /* Only the parent-side end of the socket pair must be set to non-blocking,
+   * because the child may not be expecting a non-blocking socket.
+   */
+  flags = fcntl (sv[0], F_GETFL, 0);
+  if (flags == -1 ||
+      fcntl (sv[0], F_SETFL, flags|O_NONBLOCK) == -1) {
+    set_error (errno, "fcntl");
+    goto close_socket_pair;
+  }
+
+  sock = nbd_internal_socket_create (sv[0]);
+  if (!sock)
+    /* nbd_internal_socket_create() calls set_error() internally */
+    goto close_socket_pair;
+  parentfd_transferred = true;
+
   pid = fork ();
   if (pid == -1) {
     set_error (errno, "fork");
-    goto close_socket_pair;
+    goto close_high_level_socket;
   }
 
   if (pid == 0) {         /* child - run command */
@@ -301,24 +319,7 @@ STATE_MACHINE {
       _exit (126);
   }
 
-  /* Parent.
-   *
-   * Only the parent-side end of the socket pair must be set to non-blocking,
-   * because the child may not be expecting a non-blocking socket.
-   */
-  flags = fcntl (sv[0], F_GETFL, 0);
-  if (flags == -1 ||
-      fcntl (sv[0], F_SETFL, flags|O_NONBLOCK) == -1) {
-    set_error (errno, "fcntl");
-    goto close_socket_pair;
-  }
-
-  sock = nbd_internal_socket_create (sv[0]);
-  if (!sock)
-    /* nbd_internal_socket_create() calls set_error() internally */
-    goto close_socket_pair;
-
-  /* Commit. */
+  /* Parent -- we're done; commit. */
   h->pid = pid;
   h->sock = sock;
 
@@ -329,8 +330,13 @@ STATE_MACHINE {
 
   /* fall through, for releasing the temporaries */
 
-close_socket_pair:
+close_high_level_socket:
   if (next == %.DEAD)
+    sock->ops->close (sock);
+
+close_socket_pair:
+  assert (next == %.DEAD || parentfd_transferred);
+  if (!parentfd_transferred)
     close (sv[0]);
   close (sv[1]);
 
