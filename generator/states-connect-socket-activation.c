@@ -127,7 +127,7 @@ STATE_MACHINE {
 
   if (asprintf (&h->sact_sockpath, "%s/sock", h->sact_tmpdir) == -1) {
     SET_NEXT_STATE (%.DEAD);
-    set_error (errno, "strdup");
+    set_error (errno, "asprintf");
     return 0;
   }
 
