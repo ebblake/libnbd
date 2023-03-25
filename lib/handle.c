@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "ascii-ctype.h"
 #include "internal.h"
 
 static void
@@ -159,6 +160,7 @@ nbd_close (struct nbd_handle *h)
     waitpid (h->pid, NULL, 0);
 
   free (h->export_name);
+  free (h->sact_name);
   free (h->tls_certificates);
   free (h->tls_username);
   free (h->tls_psk_file);
@@ -188,6 +190,60 @@ char *
 nbd_unlocked_get_handle_name (struct nbd_handle *h)
 {
   char *copy = strdup (h->hname);
+
+  if (!copy) {
+    set_error (errno, "strdup");
+    return NULL;
+  }
+
+  return copy;
+}
+
+int
+nbd_unlocked_set_socket_activation_name (struct nbd_handle *h,
+                                         const char *name)
+{
+  size_t i, len;
+  char *new_name;
+
+  len = strlen (name);
+
+  /* Setting it to empty string stores NULL in the handle. */
+  if (len == 0) {
+    free (h->sact_name);
+    h->sact_name = NULL;
+    return 0;
+  }
+
+  /* Check the proposed name is short and alphanumeric. */
+  if (len > 32) {
+    set_error (ENAMETOOLONG, "socket activation name should be "
+               "<= 32 characters");
+    return -1;
+  }
+  for (i = 0; i < len; ++i) {
+    if (! ascii_isalnum (name[i])) {
+      set_error (EINVAL, "socket activation name should contain "
+                 "only alphanumeric ASCII characters");
+      return -1;
+    }
+  }
+
+  new_name = strdup (name);
+  if (!new_name) {
+    set_error (errno, "strdup");
+    return -1;
+  }
+
+  free (h->sact_name);
+  h->sact_name = new_name;
+  return 0;
+}
+
+char *
+nbd_unlocked_get_socket_activation_name (struct nbd_handle *h)
+{
+  char *copy = strdup (h->sact_name ? h->sact_name : "");
 
   if (!copy) {
     set_error (errno, "strdup");

@@ -2036,13 +2036,61 @@ protocol).
 
 When the NBD handle is closed the server subprocess
 is killed.
+
+=head3 Socket name
+
+The socket activation protocol lets you optionally give
+the socket a name.  If used, the name is passed to the
+NBD server using the C<LISTEN_FDNAMES> environment
+variable.  To provide a socket name, call
+L<nbd_set_socket_activation_name(3)> before calling
+the connect function.
 " ^ blocking_connect_call_description;
     see_also = [Link "aio_connect_systemd_socket_activation";
                 Link "connect_command"; Link "kill_subprocess";
                 Link "set_opt_mode";
+                Link "set_socket_activation_name";
+                Link "get_socket_activation_name";
                 ExternalLink ("qemu-nbd", 1);
                 URLLink "http://0pointer.de/blog/projects/socket-activation.html"];
     example = Some "examples/open-qcow2.c";
+  };
+
+  "set_socket_activation_name", {
+    default_call with
+    args = [ String "socket_name" ]; ret = RErr;
+    permitted_states = [ Created ];
+    shortdesc = "set the socket activation name";
+    longdesc = "\
+When running an NBD server using
+L<nbd_connect_systemd_socket_activation(3)> you can optionally
+name the socket.  Call this function before connecting to the
+server.
+
+Some servers such as L<qemu-storage-daemon(1)>
+can use this information to associate the socket with a name
+used on the command line, but most servers will ignore it.
+The name is passed through the C<LISTEN_FDNAMES> environment
+variable.
+
+The parameter C<socket_name> can be a short alphanumeric string.
+If it is set to the empty string (also the default when the handle
+is created) then the name C<unknown> will be seen by the server.";
+    see_also = [Link "connect_systemd_socket_activation";
+                Link "get_socket_activation_name"];
+  };
+
+  "get_socket_activation_name", {
+    default_call with
+    args = []; ret = RString;
+    shortdesc = "get the socket activation name";
+    longdesc = "\
+Return the socket name used when you call
+L<nbd_connect_systemd_socket_activation(3)> on the same
+handle.  By default this will return the empty string
+meaning that the server will see the name C<unknown>.";
+    see_also = [Link "connect_systemd_socket_activation";
+                Link "set_socket_activation_name"];
   };
 
   "is_read_only", {
@@ -3844,6 +3892,8 @@ let first_version = [
   "aio_opt_structured_reply", (1, 16);
   "opt_starttls", (1, 16);
   "aio_opt_starttls", (1, 16);
+  "set_socket_activation_name", (1, 16);
+  "get_socket_activation_name", (1, 16);
 
   (* These calls are proposed for a future version of libnbd, but
    * have not been added to any released version so far.

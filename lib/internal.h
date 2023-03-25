@@ -101,6 +101,7 @@ struct nbd_handle {
   _Atomic uintptr_t private_data;
 
   char *export_name;            /* Export name, never NULL. */
+  char *sact_name;              /* Socket activation name, can be NULL. */
 
   /* TLS settings. */
   int tls;                      /* 0 = disable, 1 = enable, 2 = require */
