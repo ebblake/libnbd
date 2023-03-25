@@ -30,57 +30,137 @@
 #include <sys/un.h>
 
 #include "internal.h"
+#include "compiler-macros.h"
+#include "unique-name.h"
+#include "array-size.h"
+#include "checked-overflow.h"
 
 /* This is baked into the systemd socket activation API. */
 #define FIRST_SOCKET_ACTIVATION_FD 3
 
-/* == strlen ("LISTEN_PID=") | strlen ("LISTEN_FDS=") */
-#define PREFIX_LENGTH 11
+/* Describes a systemd socket activation environment variable. */
+struct sact_var {
+  const char *prefix; /* variable name and equal sign */
+  size_t prefix_len;
+  const char *value;
+  size_t value_len;
+};
+
+/* Determine the length of a string, using "sizeof" whenever possible.
+ *
+ * Do not use this macro on an argument that has side effects, as no guarantees
+ * are given regarding the number of times the argument may be evaluated.
+ * TYPE_IS_ARRAY(s) itself may contribute a different number of evaluations
+ * dependent on whether "s" has variably modified type, and then the conditional
+ * operator either evaluates "sizeof s" (which contributes 0 or 1 evaluations,
+ * dependent on whether "s" has variably modified type) or strlen(s) (which
+ * contributes 1 evaluation). Also note that the argument of the "sizeof"
+ * operator is *only* parenthesized because "s" is a macro parameter here.
+*/
+#define STRLEN1(s) ((TYPE_IS_ARRAY (s) ? sizeof (s) - 1 : strlen (s)))
+
+/* Push a new element to an array of "sact_var" structures.
+ *
+ * "vars" is the array to extend. "num_vars" (of type (size_t *)) points to the
+ * number of elements that the array, on input, contains; (*num_vars) is
+ * increased by one on output. "prefix" and "value" serve as the values for
+ * setting the fields in the new element. "ofs" (of type (size_t *)) may be
+ * NULL; if it isn't, then on output, (*ofs) is set to the input value of
+ * (*num_vars): the offset of the just-pushed element.
+ *
+ * Avoid arguments with side-effects here as well.
+ */
+#define SACT_VAR_PUSH(vars, num_vars, prefix, value, ofs)       \
+  SACT_VAR_PUSH1 ((vars), (num_vars), (prefix), (value), (ofs), \
+                  NBDKIT_UNIQUE_NAME (_ofs))
+#define SACT_VAR_PUSH1(vars, num_vars, prefix, value, ofs, ofs1)             \
+  do {                                                                       \
+    size_t *ofs1;                                                            \
+                                                                             \
+    assert (*(num_vars) < ARRAY_SIZE (vars));                                \
+    ofs1 = (ofs);                                                            \
+    if (ofs1 != NULL)                                                        \
+      *ofs1 = *(num_vars);                                                   \
+    (vars)[(*(num_vars))++] = (struct sact_var){ (prefix), STRLEN1 (prefix), \
+                                                 (value), STRLEN1 (value) }; \
+  } while (0)
 
 extern char **environ;
 
-/* Prepare environment for calling execvp when doing systemd socket
- * activation.  Takes the current environment and copies it.  Removes
- * any existing LISTEN_PID or LISTEN_FDS and replaces them with new
- * variables.  env[0] is "LISTEN_PID=..." which is filled in by
- * CONNECT_SA.START, and env[1] is "LISTEN_FDS=1".
+/* Prepare environment for calling execvp when doing systemd socket activation.
+ * Takes the current environment and copies it. Removes any existing socket
+ * activation variables and replaces them with new ones. Variables in "sact_var"
+ * will be placed at the front of "env", preserving the order from "sact_var".
  */
 static int
-prepare_socket_activation_environment (string_vector *env)
+prepare_socket_activation_environment (string_vector *env,
+                                       const struct sact_var *sact_var,
+                                       size_t num_vars)
 {
-  char *p;
+  const struct sact_var *var_end;
+  char *new_var;
+  const struct sact_var *var;
   size_t i;
 
   *env = (string_vector)empty_vector;
 
-  /* Reserve slots env[0] and env[1]. */
-  p = strdup ("LISTEN_PID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-  if (p == NULL)
-    goto err;
-  if (string_vector_append (env, p) == -1) {
-    free (p);
-    goto err;
-  }
-  p = strdup ("LISTEN_FDS=1");
-  if (p == NULL)
-    goto err;
-  if (string_vector_append (env, p) == -1) {
-    free (p);
-    goto err;
+  /* Set the exclusive limit for loops over "sact_var". */
+  var_end = sact_var + num_vars;
+
+  /* New environment variable being constructed for "env". */
+  new_var = NULL;
+
+  /* Copy "sact_var" to the front of "env". */
+  for (var = sact_var; var < var_end; ++var) {
+    size_t new_var_size;
+    char *p;
+
+    /* Calculate the size of the "NAME=value" string. */
+    if (ADD_OVERFLOW (var->prefix_len, var->value_len, &new_var_size) ||
+        ADD_OVERFLOW (new_var_size, 1u, &new_var_size)) {
+      errno = EOVERFLOW;
+      goto err;
+    }
+
+    /* Allocate and format "NAME=value". */
+    new_var = malloc (new_var_size);
+    if (new_var == NULL)
+      goto err;
+    p = new_var;
+
+    memcpy (p, var->prefix, var->prefix_len);
+    p += var->prefix_len;
+
+    memcpy (p, var->value, var->value_len);
+    p += var->value_len;
+
+    *p++ = '\0';
+
+    /* Push "NAME=value" to the vector. */
+    if (string_vector_append (env, new_var) == -1)
+      goto err;
+    /* Ownership transferred. */
+    new_var = NULL;
   }
 
-  /* Append the current environment, but remove LISTEN_PID, LISTEN_FDS. */
+  /* Append the current environment to "env", but remove "sact_var". */
   for (i = 0; environ[i] != NULL; ++i) {
-    if (strncmp (environ[i], "LISTEN_PID=", PREFIX_LENGTH) != 0 &&
-        strncmp (environ[i], "LISTEN_FDS=", PREFIX_LENGTH) != 0) {
-      char *copy = strdup (environ[i]);
-      if (copy == NULL)
-        goto err;
-      if (string_vector_append (env, copy) == -1) {
-        free (copy);
-        goto err;
-      }
+    for (var = sact_var; var < var_end; ++var) {
+      if (strncmp (environ[i], var->prefix, var->prefix_len) == 0)
+        break;
     }
+    /* Drop known socket activation variable from the current environment. */
+    if (var < var_end)
+      continue;
+
+    new_var = strdup (environ[i]);
+    if (new_var == NULL)
+      goto err;
+
+    if (string_vector_append (env, new_var) == -1)
+      goto err;
+    /* Ownership transferred. */
+    new_var = NULL;
   }
 
   /* The environ must be NULL-terminated. */
@@ -91,6 +171,7 @@ prepare_socket_activation_environment (string_vector *env)
 
  err:
   set_error (errno, "malloc");
+  free (new_var);
   string_vector_empty (env);
   return -1;
 }
@@ -103,6 +184,9 @@ STATE_MACHINE {
   int s;
   struct sockaddr_un addr;
   struct execvpe execvpe_ctx;
+  size_t num_vars;
+  struct sact_var sact_var[2];
+  size_t pid_ofs;
   string_vector env;
   pid_t pid;
 
@@ -156,7 +240,12 @@ STATE_MACHINE {
     goto unlink_sockpath;
   }
 
-  if (prepare_socket_activation_environment (&env) == -1)
+  num_vars = 0;
+  SACT_VAR_PUSH (sact_var, &num_vars,
+                 "LISTEN_PID=", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", &pid_ofs);
+  SACT_VAR_PUSH (sact_var, &num_vars,
+                 "LISTEN_FDS=", "1", NULL);
+  if (prepare_socket_activation_environment (&env, sact_var, num_vars) == -1)
     /* prepare_socket_activation_environment() calls set_error() internally */
     goto uninit_execvpe;
 
@@ -196,7 +285,8 @@ STATE_MACHINE {
     char buf[32];
     const char *v =
       nbd_internal_fork_safe_itoa ((long) getpid (), buf, sizeof buf);
-    strcpy (&env.ptr[0][PREFIX_LENGTH], v);
+    NBD_INTERNAL_FORK_SAFE_ASSERT (strlen (v) <= sact_var[pid_ofs].value_len);
+    strcpy (env.ptr[pid_ofs] + sact_var[pid_ofs].prefix_len, v);
 
     /* Restore SIGPIPE back to SIG_DFL. */
     if (signal (SIGPIPE, SIG_DFL) == SIG_ERR) {
