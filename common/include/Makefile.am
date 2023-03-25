@@ -20,6 +20,7 @@ include $(top_srcdir)/subdir-rules.mk
 EXTRA_DIST = \
 	ansi-colours.h \
 	array-size.h \
+	ascii-ctype.h \
 	byte-swapping.h \
 	checked-overflow.h \
 	compiler-macros.h \
@@ -36,6 +37,7 @@ EXTRA_DIST = \
 
 TESTS = \
 	test-array-size \
+	test-ascii-ctype \
 	test-byte-swapping \
 	test-checked-overflow \
 	test-isaligned \
@@ -48,6 +50,10 @@ check_PROGRAMS = $(TESTS)
 test_array_size_SOURCES = test-array-size.c array-size.h
 test_array_size_CPPFLAGS = -I$(srcdir)
 test_array_size_CFLAGS = $(WARNINGS_CFLAGS)
+
+test_ascii_ctype_SOURCES = test-ascii-ctype.c ascii-ctype.h
+test_ascii_ctype_CPPFLAGS = -I$(srcdir)
+test_ascii_ctype_CFLAGS = $(WARNINGS_CFLAGS)
 
 test_byte_swapping_SOURCES = test-byte-swapping.c byte-swapping.h
 test_byte_swapping_CPPFLAGS = -I$(srcdir)
