@@ -185,7 +185,7 @@ STATE_MACHINE {
   struct sockaddr_un addr;
   struct execvpe execvpe_ctx;
   size_t num_vars;
-  struct sact_var sact_var[2];
+  struct sact_var sact_var[3];
   size_t pid_ofs;
   string_vector env;
   pid_t pid;
@@ -245,6 +245,16 @@ STATE_MACHINE {
                  "LISTEN_PID=", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", &pid_ofs);
   SACT_VAR_PUSH (sact_var, &num_vars,
                  "LISTEN_FDS=", "1", NULL);
+  /* Push LISTEN_FDNAMES unconditionally. This ensures we overwrite any
+   * inherited LISTEN_FDNAMES. If "h->sact_name" is NULL, then push
+   * "LISTEN_FDNAMES=unknown"; it will have the same effect on the child process
+   * as unsetting LISTEN_FDNAMES would (with LISTEN_FDS being set to 1):
+   * <https://www.freedesktop.org/software/systemd/man/sd_listen_fds.html>.
+   */
+  SACT_VAR_PUSH (sact_var, &num_vars,
+                 "LISTEN_FDNAMES=",
+                 h->sact_name == NULL ? "unknown" : h->sact_name,
+                 NULL);
   if (prepare_socket_activation_environment (&env, sact_var, num_vars) == -1)
     /* prepare_socket_activation_environment() calls set_error() internally */
     goto uninit_execvpe;
