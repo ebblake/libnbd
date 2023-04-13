@@ -54,7 +54,10 @@ EXTRA_DIST = \
 
 if HAVE_POD
 
-man_MANS = \
+# There are a handful of nroff files which are hand-written (such as
+# nbd_close.3) but most are generated from POD.  List the generated
+# ones here so we don't delete the hand-written ones in CLEANFILES.
+manpages_with_pod_source = \
 	libnbd.3 \
 	libnbd-release-notes-1.2.1 \
 	libnbd-release-notes-1.4.1 \
@@ -65,23 +68,16 @@ man_MANS = \
 	libnbd-release-notes-1.14.1 \
 	libnbd-security.3 \
 	nbd_create.3 \
+	$(api_built:%=%.3)
+
+man_MANS = \
+	$(manpages_with_pod_source) \
 	nbd_close.3 \
 	nbd_get_error.3 \
 	nbd_get_errno.3 \
-	$(api_built:%=%.3) \
 	$(NULL)
 CLEANFILES += \
-	libnbd.3 \
-	libnbd-release-notes-1.2.1 \
-	libnbd-release-notes-1.4.1 \
-	libnbd-release-notes-1.6.1 \
-	libnbd-release-notes-1.8.1 \
-	libnbd-release-notes-1.10.1 \
-	libnbd-release-notes-1.12.1 \
-	libnbd-release-notes-1.14.1 \
-	libnbd-security.3 \
-	nbd_create.3 \
-	$(api_built:%=%.3) \
+	$(manpages_with_pod_source) \
 	$(NULL)
 
 nbd_%.3: nbd_%.pod $(top_builddir)/podwrapper.pl
