@@ -482,7 +482,10 @@ nbd_ops_get_extents (struct rw *rw, size_t index,
 
     /* The server should always make progress. */
     if (offset == old_offset) {
-      fprintf (stderr, "%s: NBD server is broken: it is not returning extent information.\nTry nbdcopy --no-extents as a workaround.\n",
+      fprintf (stderr,
+               "%s: NBD server is broken: it is not returning extent "
+               "information.\n"
+               "Try nbdcopy --no-extents as a workaround.\n",
                rw->name);
       exit (EXIT_FAILURE);
     }
