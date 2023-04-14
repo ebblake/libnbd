@@ -228,7 +228,7 @@ extern void asynch_notify_read_write_not_supported (struct rw *rw,
 
 extern bool allocated;
 extern unsigned connections;
-extern bool destination_is_zero;
+extern bool target_is_zero;
 extern bool extents;
 extern bool flush;
 extern unsigned max_requests;

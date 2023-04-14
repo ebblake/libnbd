@@ -351,8 +351,8 @@ file_truncate (struct rw *rw, int64_t size)
   }
   rwf->rw.size = size;
 
-  /* We can assume the destination is zero. */
-  destination_is_zero = true;
+  /* We can assume the target is zero. */
+  target_is_zero = true;
 }
 
 static void

@@ -46,7 +46,7 @@
 
 bool allocated;                     /* --allocated flag */
 unsigned connections = 4;           /* --connections */
-bool destination_is_zero;           /* --destination-is-zero flag */
+bool target_is_zero;                /* --target-is-zero flag */
 bool extents = true;                /* ! --no-extents flag */
 bool flush;                         /* --flush flag */
 unsigned max_requests = 64;         /* --requests */
@@ -110,7 +110,7 @@ main (int argc, char *argv[])
     LONG_OPTIONS,
     SHORT_OPTIONS,
     ALLOCATED_OPTION,
-    DESTINATION_IS_ZERO_OPTION,
+    TARGET_IS_ZERO_OPTION,
     FLUSH_OPTION,
     NO_EXTENTS_OPTION,
     QUEUE_SIZE_OPTION,
@@ -123,7 +123,7 @@ main (int argc, char *argv[])
     { "long-options",       no_argument,       NULL, LONG_OPTIONS },
     { "allocated",          no_argument,       NULL, ALLOCATED_OPTION },
     { "connections",        required_argument, NULL, 'C' },
-    { "destination-is-zero",no_argument,       NULL, DESTINATION_IS_ZERO_OPTION },
+    { "destination-is-zero",no_argument,       NULL, TARGET_IS_ZERO_OPTION },
     { "flush",              no_argument,       NULL, FLUSH_OPTION },
     { "no-extents",         no_argument,       NULL, NO_EXTENTS_OPTION },
     { "progress",           optional_argument, NULL, 'p' },
@@ -133,7 +133,7 @@ main (int argc, char *argv[])
     { "short-options",      no_argument,       NULL, SHORT_OPTIONS },
     { "sparse",             required_argument, NULL, 'S' },
     { "synchronous",        no_argument,       NULL, SYNCHRONOUS_OPTION },
-    { "target-is-zero",     no_argument,       NULL, DESTINATION_IS_ZERO_OPTION },
+    { "target-is-zero",     no_argument,       NULL, TARGET_IS_ZERO_OPTION },
     { "threads",            required_argument, NULL, 'T' },
     { "verbose",            no_argument,       NULL, 'v' },
     { "version",            no_argument,       NULL, 'V' },
@@ -174,8 +174,8 @@ main (int argc, char *argv[])
       allocated = true;
       break;
 
-    case DESTINATION_IS_ZERO_OPTION:
-      destination_is_zero = true;
+    case TARGET_IS_ZERO_OPTION:
+      target_is_zero = true;
       break;
 
     case FLUSH_OPTION:

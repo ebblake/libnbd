@@ -634,7 +634,7 @@ fill_dst_range_with_zeroes (struct command *command)
   char *data;
   size_t data_size;
 
-  if (destination_is_zero)
+  if (target_is_zero)
     goto free_and_return;
 
   /* Try efficient zeroing. */
