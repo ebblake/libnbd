@@ -222,6 +222,11 @@ main (int argc, char *argv[])
     struct data *d = malloc (sizeof *d);
     struct range *r = malloc (sizeof *r);
     uint64_t offset;
+    nbd_chunk_callback chunk_callback = { .callback = read_chunk,
+                                          .user_data = d };
+    nbd_completion_callback completion_callback = { .callback = read_verify,
+                                                    .user_data = d,
+                                                    .free = free };
 
     assert (d && r);
     offset = rand () % (exportsize - maxsize);
@@ -230,10 +235,8 @@ main (int argc, char *argv[])
     *r = (struct range) { .first = offset, .last = offset + maxsize, };
     *d = (struct data) { .offset = offset, .count = maxsize, .flags = flags,
                          .remaining = r, };
-    if (nbd_aio_pread_structured (nbd, buf, sizeof buf, offset,
-                                  (nbd_chunk_callback) { .callback = read_chunk, .user_data = d },
-                                  (nbd_completion_callback) { .callback = read_verify, .user_data = d, .free = free },
-                                  flags) == -1) {
+    if (nbd_aio_pread_structured (nbd, buf, sizeof buf, offset, chunk_callback,
+                                  completion_callback, flags) == -1) {
       fprintf (stderr, "%s\n", nbd_get_error ());
       exit (EXIT_FAILURE);
     }
