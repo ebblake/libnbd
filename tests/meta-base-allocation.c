@@ -43,6 +43,8 @@ main (int argc, char *argv[])
   struct nbd_handle *nbd;
   char plugin_path[256];
   int id;
+  nbd_extent_callback extent_callback = { .callback = check_extent,
+                                          .user_data = &id };
   int r;
   const char *s;
   char *tmp;
@@ -148,24 +150,19 @@ main (int argc, char *argv[])
 
   /* Read the block status. */
   id = 1;
-  if (nbd_block_status (nbd, 65536, 0,
-                        (nbd_extent_callback) { .callback = check_extent, .user_data = &id },
-                        0) == -1) {
+  if (nbd_block_status (nbd, 65536, 0, extent_callback, 0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
 
   id = 2;
-  if (nbd_block_status (nbd, 1024, 32768-512,
-                        (nbd_extent_callback) { .callback = check_extent, .user_data = &id },
-                        0) == -1) {
+  if (nbd_block_status (nbd, 1024, 32768-512, extent_callback, 0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
 
   id = 3;
-  if (nbd_block_status (nbd, 1024, 32768-512,
-                        (nbd_extent_callback) { .callback = check_extent, .user_data = &id },
+  if (nbd_block_status (nbd, 1024, 32768-512, extent_callback,
                         LIBNBD_CMD_FLAG_REQ_ONE) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
