@@ -117,6 +117,14 @@ main (int argc, char *argv[])
   struct nbd_handle *nbd;
   int64_t cookie;
   char buf[512];
+  nbd_debug_callback debug_callback = { .callback = debug_fn,
+                                        .free = debug_fn_free };
+  nbd_chunk_callback chunk_callback = { .callback = read_cb,
+                                        .free = read_cb_free };
+  nbd_extent_callback extent_callback = { .callback = block_status_cb,
+                                          .free = block_status_cb_free };
+  nbd_completion_callback completion_callback = { .callback = completion_cb,
+                                                  .free = completion_cb_free };
 
   /* Check debug functions are freed when a new debug function is
    * registered, and when the handle is closed.
@@ -124,13 +132,10 @@ main (int argc, char *argv[])
   nbd = nbd_create ();
   if (nbd == NULL) NBD_ERROR;
 
-  nbd_set_debug_callback (nbd,
-                          (nbd_debug_callback) { .callback = debug_fn,
-                                                 .free = debug_fn_free });
+  nbd_set_debug_callback (nbd, debug_callback);
   assert (debug_fn_freed == 0);
 
-  nbd_set_debug_callback (nbd, (nbd_debug_callback) { .callback = debug_fn,
-                                                      .free = debug_fn_free });
+  nbd_set_debug_callback (nbd, debug_callback);
   assert (debug_fn_freed == 1);
 
   debug_fn_freed = 0;
@@ -142,12 +147,8 @@ main (int argc, char *argv[])
   if (nbd == NULL) NBD_ERROR;
   if (nbd_connect_command (nbd, nbdkit) == -1) NBD_ERROR;
 
-  cookie = nbd_aio_pread_structured (nbd, buf, sizeof buf, 0,
-                                     (nbd_chunk_callback) { .callback = read_cb,
-                                                            .free = read_cb_free },
-                                     (nbd_completion_callback) { .callback = completion_cb,
-                                                                 .free = completion_cb_free },
-                                     0);
+  cookie = nbd_aio_pread_structured (nbd, buf, sizeof buf, 0, chunk_callback,
+                                     completion_callback, 0);
   if (cookie == -1) NBD_ERROR;
   assert (read_cb_freed == 0);
   assert (completion_cb_freed == 0);
@@ -172,12 +173,8 @@ main (int argc, char *argv[])
   if (nbd == NULL) NBD_ERROR;
   if (nbd_connect_command (nbd, nbdkit_delay) == -1) NBD_ERROR;
 
-  cookie = nbd_aio_pread_structured (nbd, buf, sizeof buf, 0,
-                                     (nbd_chunk_callback) { .callback = read_cb,
-                                                            .free = read_cb_free },
-                                     (nbd_completion_callback) { .callback = completion_cb,
-                                                                 .free = completion_cb_free },
-                                     0);
+  cookie = nbd_aio_pread_structured (nbd, buf, sizeof buf, 0, chunk_callback,
+                                     completion_callback, 0);
   if (cookie == -1) NBD_ERROR;
   nbd_kill_subprocess (nbd, 0);
   nbd_close (nbd);
@@ -195,12 +192,8 @@ main (int argc, char *argv[])
   /* Intentionally omit a call to:
    *  nbd_add_meta_context (nbd, LIBNBD_CONTEXT_BASE_ALLOCATION);
    */
-  cookie = nbd_aio_block_status (nbd, sizeof buf, 0,
-                                 (nbd_extent_callback) { .callback = block_status_cb,
-                                                         .free = block_status_cb_free },
-                                 (nbd_completion_callback) { .callback = completion_cb,
-                                                             .free = completion_cb_free },
-                                 0);
+  cookie = nbd_aio_block_status (nbd, sizeof buf, 0, extent_callback,
+                                 completion_callback, 0);
   if (cookie != -1) {
     fprintf (stderr, "%s: Expecting block_status failure\n", argv[0]);
     exit (EXIT_FAILURE);
@@ -213,12 +206,8 @@ main (int argc, char *argv[])
 
   if (nbd_connect_command (nbd, nbdkit) == -1) NBD_ERROR;
 
-  cookie = nbd_aio_block_status (nbd, sizeof buf, 0,
-                                 (nbd_extent_callback) { .callback = block_status_cb,
-                                                         .free = block_status_cb_free },
-                                 (nbd_completion_callback) { .callback = completion_cb,
-                                                             .free = completion_cb_free },
-                                 0);
+  cookie = nbd_aio_block_status (nbd, sizeof buf, 0, extent_callback,
+                                 completion_callback, 0);
   if (cookie != -1) {
     fprintf (stderr, "%s: Expecting block_status failure\n", argv[0]);
     exit (EXIT_FAILURE);
