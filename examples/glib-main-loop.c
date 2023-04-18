@@ -384,7 +384,8 @@ read_data (gpointer user_data)
 
   if (nbd_aio_pread (gssrc->nbd, buffers[i].data,
                      BUFFER_SIZE, buffers[i].offset,
-                     (nbd_completion_callback) { .callback = finished_read, .user_data = &buffers[i] },
+                     (nbd_completion_callback) { .callback = finished_read,
+                                                 .user_data = &buffers[i] },
                      0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -431,7 +432,8 @@ write_data (gpointer user_data)
   buffer->state = BUFFER_WRITING;
   if (nbd_aio_pwrite (gsdest->nbd, buffer->data,
                       BUFFER_SIZE, buffer->offset,
-                      (nbd_completion_callback) { .callback = finished_write, .user_data = buffer },
+                      (nbd_completion_callback) { .callback = finished_write,
+                                                  .user_data = buffer },
                       0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
