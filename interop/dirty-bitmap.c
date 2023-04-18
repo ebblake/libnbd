@@ -124,6 +124,7 @@ main (int argc, char *argv[])
   struct nbd_handle *nbd;
   int64_t exportsize;
   struct data data;
+  nbd_extent_callback extent_callback = { .callback = cb, .user_data = &data };
   char c;
 
   if (argc < 3) {
@@ -153,17 +154,14 @@ main (int argc, char *argv[])
   }
 
   data = (struct data) { .count = 2, };
-  if (nbd_block_status (nbd, exportsize, 0,
-                        (nbd_extent_callback) { .callback = cb, .user_data = &data },
-                        0) == -1) {
+  if (nbd_block_status (nbd, exportsize, 0, extent_callback, 0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
   assert (data.seen_base && data.seen_dirty);
 
   data = (struct data) { .req_one = true, .count = 2, };
-  if (nbd_block_status (nbd, exportsize, 0,
-                        (nbd_extent_callback) { .callback = cb, .user_data = &data },
+  if (nbd_block_status (nbd, exportsize, 0, extent_callback,
                         LIBNBD_CMD_FLAG_REQ_ONE) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -172,9 +170,7 @@ main (int argc, char *argv[])
 
   /* Trigger a failed callback, to prove connection stays up. */
   data = (struct data) { .count = 2, .fail = true, };
-  if (nbd_block_status (nbd, exportsize, 0,
-                        (nbd_extent_callback) { .callback = cb, .user_data = &data },
-                        0) != -1) {
+  if (nbd_block_status (nbd, exportsize, 0, extent_callback, 0) != -1) {
     fprintf (stderr, "unexpected block status success\n");
     exit (EXIT_FAILURE);
   }

@@ -106,6 +106,8 @@ main (int argc, char *argv[])
   struct nbd_handle *nbd;
   int64_t exportsize;
   struct data data;
+  nbd_chunk_callback chunk_callback = { .callback = read_cb,
+                                        .user_data = &data };
   char c;
 
   if (argc < 2) {
@@ -141,9 +143,8 @@ main (int argc, char *argv[])
 
   memset (rbuf, 2, sizeof rbuf);
   data = (struct data) { .count = 2, };
-  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048,
-                            (nbd_chunk_callback) { .callback = read_cb, .user_data = &data },
-                            0) == -1) {
+  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048, chunk_callback, 0) ==
+      -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
@@ -152,8 +153,7 @@ main (int argc, char *argv[])
   /* Repeat with DF flag. */
   memset (rbuf, 2, sizeof rbuf);
   data = (struct data) { .df = true, .count = 1, };
-  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048,
-                            (nbd_chunk_callback) { .callback = read_cb, .user_data = &data },
+  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048, chunk_callback,
                             LIBNBD_CMD_FLAG_DF) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -166,9 +166,8 @@ main (int argc, char *argv[])
    */
   memset (rbuf, 2, sizeof rbuf);
   data = (struct data) { .count = 2, .fail = true, };
-  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048,
-                            (nbd_chunk_callback) { .callback = read_cb, .user_data = &data },
-                            0) != -1) {
+  if (nbd_pread_structured (nbd, rbuf, sizeof rbuf, 2048, chunk_callback, 0) !=
+      -1) {
     fprintf (stderr, "unexpected pread callback success\n");
     exit (EXIT_FAILURE);
   }
