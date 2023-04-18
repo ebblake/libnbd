@@ -7,7 +7,7 @@ libnbd-release-notes-1.16 - release notes for libnbd 1.16
 These are the release notes for libnbd stable release 1.16.
 This describes the major changes since 1.14.
 
-libnbd 1.16.0 was released on B<XXX April 2023>.
+libnbd 1.16.0 was released on B<18 April 2023>.
 
 =head2 Security
 
@@ -144,6 +144,8 @@ The library is now much more POSIX-compliant and resilient when
 running subcommands, no longer relying on quirks of the glibc
 implementation of execvp and other non-async-signal-safe functions
 (Laszlo Ersek).
+
+Source files reformatted to use E<le> 80 columns (Laszlo Ersek).
 
 =begin comment
 
