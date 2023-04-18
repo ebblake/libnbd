@@ -7,9 +7,11 @@
  *
  * To run it:
  *
- *     nbdkit -r pattern size=1G -U /tmp/src.sock
- *     nbdkit memory size=1g -U /tmp/dst.sock
- *     ./copy-ev nbd+unix:///?socket=/tmp/src.sock nbd+unix:///?socket=/tmp/dst.sock
+ *     SRC=/tmp/src.sock
+ *     DST=/tmp/dst.sock
+ *     nbdkit -r pattern size=1G -U $SRC
+ *     nbdkit memory size=1g -U $DST
+ *     ./copy-libev nbd+unix:///?socket=$SRC nbd+unix:///?socket=$DST
  *
  * To debug it:
  *
