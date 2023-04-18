@@ -163,7 +163,8 @@ STATE_MACHINE {
       case NBD_INFO_EXPORT:
         if (len != sizeof h->sbuf.or.payload.export) {
           SET_NEXT_STATE (%.DEAD);
-          set_error (0, "handshake: incorrect NBD_INFO_EXPORT option reply length");
+          set_error (0, "handshake: incorrect NBD_INFO_EXPORT option reply "
+                     "length");
           return 0;
         }
         exportsize = be64toh (h->sbuf.or.payload.export.exportsize);
@@ -176,7 +177,8 @@ STATE_MACHINE {
       case NBD_INFO_BLOCK_SIZE:
         if (len != sizeof h->sbuf.or.payload.block_size) {
           SET_NEXT_STATE (%.DEAD);
-          set_error (0, "handshake: incorrect NBD_INFO_BLOCK_SIZE option reply length");
+          set_error (0, "handshake: incorrect NBD_INFO_BLOCK_SIZE option "
+                     "reply length");
           return 0;
         }
         min = be32toh (h->sbuf.or.payload.block_size.minimum);
@@ -191,7 +193,8 @@ STATE_MACHINE {
         if (len > sizeof h->sbuf.or.payload.name_desc.info + NBD_MAX_STRING ||
             len < sizeof h->sbuf.or.payload.name_desc.info) {
           SET_NEXT_STATE (%.DEAD);
-          set_error (0, "handshake: incorrect NBD_INFO_NAME option reply length");
+          set_error (0, "handshake: incorrect NBD_INFO_NAME option reply "
+                     "length");
           return 0;
         }
         free (h->canonical_name);
@@ -206,7 +209,8 @@ STATE_MACHINE {
         if (len > sizeof h->sbuf.or.payload.name_desc.info + NBD_MAX_STRING ||
             len < sizeof h->sbuf.or.payload.name_desc.info) {
           SET_NEXT_STATE (%.DEAD);
-          set_error (0, "handshake: incorrect NBD_INFO_DESCRIPTION option reply length");
+          set_error (0, "handshake: incorrect NBD_INFO_DESCRIPTION option "
+                     "reply length");
           return 0;
         }
         free (h->description);

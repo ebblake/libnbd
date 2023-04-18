@@ -53,7 +53,8 @@ STATE_MACHINE {
   }
   else {
     SET_NEXT_STATE (%.DEAD);
-    set_error (0, "handshake: server is not either an oldstyle or fixed newstyle NBD server");
+    set_error (0, "handshake: server is not either an oldstyle or "
+               "fixed newstyle NBD server");
     return 0;
   }
   return 0;
