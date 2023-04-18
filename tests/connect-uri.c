@@ -198,7 +198,8 @@ compare_uris (const char *uri1, const char *uri2)
     if (strstr (uri2, q) != NULL)
       r = 0;
     else {
-      fprintf (stderr, "error: compare_uris: query string '%s' does not appear in returned URI\n", q);
+      fprintf (stderr, "error: compare_uris: query string '%s' does not appear "
+               "in returned URI\n", q);
       r = 1;
     }
     free (q);
