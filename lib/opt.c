@@ -467,10 +467,10 @@ int
 nbd_unlocked_aio_opt_list_meta_context_queries (struct nbd_handle *h,
                                                 char **queries,
                                                 nbd_context_callback *context,
-                                                nbd_completion_callback *complete)
+                                                nbd_completion_callback *compl)
 {
   return aio_opt_meta_context_queries (h, NBD_OPT_LIST_META_CONTEXT,
-                                       queries, context, complete);
+                                       queries, context, compl);
 }
 
 /* Issue NBD_OPT_SET_META_CONTEXT without waiting. */
@@ -488,8 +488,8 @@ int
 nbd_unlocked_aio_opt_set_meta_context_queries (struct nbd_handle *h,
                                                char **queries,
                                                nbd_context_callback *context,
-                                               nbd_completion_callback *complete)
+                                               nbd_completion_callback *compl)
 {
   return aio_opt_meta_context_queries (h, NBD_OPT_SET_META_CONTEXT,
-                                       queries, context, complete);
+                                       queries, context, compl);
 }
