@@ -407,7 +407,9 @@ extern int nbd_internal_wait_until_connected (struct nbd_handle *h)
   LIBNBD_ATTRIBUTE_NONNULL (1);
 
 /* crypto.c */
-extern struct socket *nbd_internal_crypto_create_session (struct nbd_handle *, struct socket *oldsock)
+extern struct socket *
+  nbd_internal_crypto_create_session (struct nbd_handle *,
+                                      struct socket *oldsock)
   LIBNBD_ATTRIBUTE_NONNULL (1, 2);
 extern bool nbd_internal_crypto_is_reading (struct nbd_handle *)
   LIBNBD_ATTRIBUTE_NONNULL (1);
@@ -504,7 +506,8 @@ extern int nbd_internal_run (struct nbd_handle *h, enum external_event ev)
   LIBNBD_ATTRIBUTE_NONNULL (1);
 extern const char *nbd_internal_state_short_string (enum state state);
 extern enum state_group nbd_internal_state_group (enum state state);
-extern enum state_group nbd_internal_state_group_parent (enum state_group group);
+extern enum state_group
+  nbd_internal_state_group_parent (enum state_group group);
 extern int nbd_internal_aio_get_direction (enum state state);
 
 #define set_next_state(h,next_state) ((h)->state) = (next_state)
