@@ -191,7 +191,8 @@ main (int argc, char *argv[])
 #if TLS_FALLBACK
     if (nbd_get_tls_negotiated (nbd) != 0) {
       fprintf (stderr,
-               "%s: TLS disabled, but connection didn't fall back to plaintext\n",
+               "%s: TLS disabled, but connection didn't fall back to "
+               "plaintext\n",
                argv[0]);
       exit (EXIT_FAILURE);
     }
