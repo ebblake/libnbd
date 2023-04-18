@@ -229,8 +229,8 @@ main (int argc, char *argv[])
     case 'C':
       if (sscanf (optarg, "%u", &connections) != 1 ||
           connections < 1 || connections > 1024) {
-        fprintf (stderr, "%s: --connections parameter must be an unsigned integer >= 1\n",
-                 argv[0]);
+        fprintf (stderr, "%s: --connections option-argument must be an "
+                 "unsigned integer >= 1\n", argv[0]);
         exit (EXIT_FAILURE);
       }
       break;
