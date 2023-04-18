@@ -268,7 +268,8 @@ static int
 set_parameters (struct ublksrv_ctrl_dev *ctrl_dev,
                 const struct ublksrv_dev *dev)
 {
-  const struct ublksrv_ctrl_dev_info *dinfo = ublksrv_ctrl_get_dev_info (ctrl_dev);
+  const struct ublksrv_ctrl_dev_info *dinfo =
+    ublksrv_ctrl_get_dev_info (ctrl_dev);
   const unsigned attrs =
     (readonly ? UBLK_ATTR_READ_ONLY : 0) |
     (rotational ? UBLK_ATTR_ROTATIONAL : 0) |
@@ -308,7 +309,8 @@ set_parameters (struct ublksrv_ctrl_dev *ctrl_dev,
 int
 start_daemon (struct ublksrv_ctrl_dev *ctrl_dev)
 {
-  const struct ublksrv_ctrl_dev_info *dinfo = ublksrv_ctrl_get_dev_info (ctrl_dev);
+  const struct ublksrv_ctrl_dev_info *dinfo =
+    ublksrv_ctrl_get_dev_info (ctrl_dev);
   const struct ublksrv_dev *dev;
   size_t i;
   int r;
