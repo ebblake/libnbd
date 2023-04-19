@@ -57,7 +57,8 @@ requires_qemu_nbd_tls_support (const char *qemu_nbd)
    * interested in the error message that it prints.
    */
   snprintf (cmd, sizeof cmd,
-            "if %s --object tls-creds-x509,id=tls0 |& grep -sq 'TLS credentials support requires GNUTLS'; then exit 1; else exit 0; fi",
+            "! %s --object tls-creds-x509,id=tls0 2>&1 \\\n"
+            "  | grep -sq 'TLS credentials support requires GNUTLS'\n",
             qemu_nbd);
   requires (cmd);
 }
@@ -72,7 +73,8 @@ requires_qemu_nbd_tls_psk_support (const char *qemu_nbd)
    * interested in the error message that it prints.
    */
   snprintf (cmd, sizeof cmd,
-            "if %s --object tls-creds-psk,id=tls0 / |& grep -sq 'invalid object type'; then exit 1; else exit 0; fi",
+            "! %s --object tls-creds-psk,id=tls0 / 2>&1 \\\n"
+            "  | grep -sq 'invalid object type'\n",
             qemu_nbd);
   requires (cmd);
 }
