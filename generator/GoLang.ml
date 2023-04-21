@@ -135,7 +135,7 @@ let print_wrapper (name, { args; optargs; ret }) =
   pr "%s\n" ret_c_type;
   pr "_nbd_%s_wrapper (struct error *err,\n" name;
   pr "        ";
-  C.print_arg_list ~wrap:true ~handle:true ~parens:false args optargs;
+  C.print_arg_list ~wrap:true ~handle:true ~parens:NoParens args optargs;
   pr ")\n";
   pr "{\n";
   pr "#ifdef LIBNBD_HAVE_NBD_%s\n" ucname;
@@ -736,7 +736,7 @@ missing_function (struct error *err, const char *fn)
       let ret_c_type = C.type_of_ret ret in
       pr "%s _nbd_%s_wrapper (struct error *err,\n" ret_c_type name;
       pr "        ";
-      C.print_arg_list ~wrap:true ~handle:true ~parens:false args optargs;
+      C.print_arg_list ~wrap:true ~handle:true ~parens:NoParens args optargs;
       pr ");\n";
   ) handle_calls;
   pr "\n";

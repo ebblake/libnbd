@@ -23,6 +23,7 @@ open API
 open Utils
 
 type closure_style = Direct | AddressOf | Pointer
+type parens_style = NoParens | ParensSameLine | ParensNewLineWithIndent of int
 
 let generate_lib_libnbd_syms () =
   generate_header HashStyle;
@@ -134,15 +135,23 @@ let arg_attr_nonnull =
 
 let optarg_attr_nonnull (OClosure _ | OFlags _) = [ false ]
 
-let rec print_arg_list ?(wrap = false) ?maxcol ?handle ?types ?(parens = true)
-          ?closure_style args optargs =
-  if parens then pr "(";
+let rec print_arg_list ?(wrap = false) ?maxcol ?handle ?types
+          ?(parens = ParensSameLine) ?closure_style args optargs =
+  (match parens with
+   | NoParens -> ()
+   | ParensSameLine -> pr "("
+   | ParensNewLineWithIndent indent -> pr "(\n%s" (spaces (indent + 2))
+  );
   if wrap then
     pr_wrap ?maxcol ','
       (fun () -> print_arg_list' ?handle ?types ?closure_style args optargs)
   else
     print_arg_list' ?handle ?types ?closure_style args optargs;
-  if parens then pr ")"
+  (match parens with
+   | NoParens -> ()
+   | ParensSameLine -> pr ")"
+   | ParensNewLineWithIndent indent -> pr "\n%s)" (spaces indent)
+  )
 
 and print_arg_list' ?(handle = false) ?(types = true) ?(closure_style = Direct)
           args optargs =
@@ -237,8 +246,12 @@ and print_arg_list' ?(handle = false) ?(types = true) ?(closure_style = Direct)
   ) optargs
 
 let print_call ?wrap ?maxcol ?closure_style name args optargs ret =
-  pr "%s nbd_%s " (type_of_ret ret) name;
-  print_arg_list ~handle:true ?wrap ?maxcol ?closure_style args optargs
+  pr "%s " (type_of_ret ret);
+  let designator_column = output_column () in
+  pr "nbd_%s " name;
+  print_arg_list ~handle:true ?wrap ?maxcol
+      ~parens:(ParensNewLineWithIndent designator_column) ?closure_style args
+      optargs
 
 let print_fndecl ?wrap ?closure_style name args optargs ret =
   pr "extern ";
