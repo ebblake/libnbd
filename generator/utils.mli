@@ -45,6 +45,7 @@ val char_mem : char -> string -> bool
 val span : string -> string -> int
 val cspan : string -> string -> int
 val quote : string -> string
+val spaces : int -> string
 val files_equal : string -> string -> bool
 
 val generate_header : ?extra_sources:string list -> comment_style -> unit

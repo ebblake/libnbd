@@ -149,6 +149,8 @@ let pr fs =
       | Buffer b -> Buffer.add_string b str
   ) fs
 
+let spaces n = String.make n ' '
+
 (* Wrap the output at maxcol, breaking up lines when a 'c' character
  * occurs.  For example:
  *   foobar = a, b, c, d, e, f, g
@@ -179,8 +181,7 @@ let pr_wrap ?(maxcol = 76) c code =
      let fields = nsplit (String.make 1 c) line in
      let maybe_wrap field =
        if !col > wrapping_col && !col + String.length field >= maxcol then (
-         pr "\n";
-         for i = 0 to wrapping_col-1 do pr " " done;
+         pr "\n%s" (spaces wrapping_col);
          match span field " \t" with
          | 0 -> field
          | i -> String.sub field i (String.length field - i)
