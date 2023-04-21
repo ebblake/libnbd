@@ -38,7 +38,6 @@ common/*.h
 common/*/*.h
 
 # Generator files.
-generator/generator
 generator/*
 
 # Source files.
