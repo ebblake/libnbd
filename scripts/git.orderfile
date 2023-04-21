@@ -38,6 +38,7 @@ common/*.h
 common/*/*.h
 
 # Generator files.
+generator/*.mli
 generator/*
 
 # Source files.
