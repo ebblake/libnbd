@@ -633,7 +633,9 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
 
   pr "  struct nbd_handle *h = NBD_val (hv);\n";
   pr "  if (h == NULL)\n";
-  pr "    nbd_internal_ocaml_raise_closed (\"NBD.%s\");\n" name;
+  pr "    nbd_internal_ocaml_raise_closed (\n";
+  pr "      \"NBD.%s\"\n" name;
+  pr "    );\n";
   pr "\n";
 
   List.iter (
