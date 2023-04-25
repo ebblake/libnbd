@@ -734,11 +734,17 @@ let generate_lib_api_c () =
       | Int64 _ | SizeT _
       | SockAddrAndLen _ | UInt _ | UInt32 _ | UInt64 _ | UIntPtr _ -> ()
     ) args;
-    if may_set_error then
-      pr "    debug (h, \"enter:"
-    else (
-      pr "    debug_direct (h, \"nbd_%s\", \"enter:" name
-    );
+    let indent =
+      if may_set_error then (
+        pr "    debug (h,\n";
+        spaces 11
+      )
+      else (
+        pr "    debug_direct (h, \"nbd_%s\",\n" name;
+        spaces 18
+      ) in
+    pr "%s\"" indent;
+    pr "enter:";
     List.iter (
       function
       | Bool n -> pr " %s=%%s" n
