@@ -186,6 +186,9 @@ let pr_wrap ?(maxcol = 76) c code =
   | line :: rest ->
      let fields = nsplit (String.make 1 c) line in
      let maybe_wrap field =
+       (* Note that here we break even if we'd fill ‘maxcol‘ precisely;
+        * that's because...
+        *)
        if !col > wrapping_col && !col + String.length field >= maxcol then (
          pr "\n%s" (spaces wrapping_col);
          match span field " \t" with
@@ -197,7 +200,11 @@ let pr_wrap ?(maxcol = 76) c code =
      let rec loop = function
        | [] -> ()
        | f :: [] -> let f = maybe_wrap f in pr "%s" f;
-       | f :: fs -> let f = maybe_wrap f in pr "%s%c" f c; loop fs
+       | f :: fs ->
+           let f = maybe_wrap f in
+           (* ... here we append the separator. *)
+           pr "%s%c" f c;
+           loop fs
      in
      loop fields;
 
