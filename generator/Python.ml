@@ -70,8 +70,9 @@ raise_exception ()
 
   List.iter (
     fun name ->
-      pr "extern PyObject *nbd_internal_py_%s (PyObject *self, PyObject *args);\n"
-         name;
+      pr "extern PyObject *nbd_internal_py_%s (\n" name;
+      pr "                   PyObject *self, PyObject *args\n";
+      pr "                 );\n"
   ) ([ "create"; "close";
        "display_version";
        "alloc_aio_buffer";
