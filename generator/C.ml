@@ -744,72 +744,78 @@ let generate_lib_api_c () =
         spaces 18
       ) in
     pr "%s\"" indent;
-    pr "enter:";
-    List.iter (
-      function
-      | Bool n -> pr " %s=%%s" n
-      | BytesOut (n, count)
-      | BytesPersistOut (n, count) -> pr " %s=<buf> %s=%%zu" n count
-      | BytesIn (n, count)
-      | BytesPersistIn (n, count) ->
-         pr " %s=\\\"%%s\\\" %s=%%zu" n count
-      | Closure { cbname } -> pr " %s=%%s" cbname
-      | Enum (n, _) -> pr " %s=%%d" n
-      | Flags (n, _) -> pr " %s=0x%%x" n
-      | Fd n | Int n -> pr " %s=%%d" n
-      | Int64 n -> pr " %s=%%\"PRIi64\"" n
-      | SizeT n -> pr " %s=%%zu" n
-      | SockAddrAndLen (n, len) -> pr " %s=<sockaddr> %s=%%d" n len
-      | Path n
-      | String n -> pr " %s=%%s" n
-      | StringList n -> pr " %s=%%s" n
-      | UInt n -> pr " %s=%%u" n
-      | UInt32 n -> pr " %s=%%\"PRIu32\"" n
-      | UInt64 n -> pr " %s=%%\"PRIu64\"" n
-      | UIntPtr n -> pr " %s=%%\"PRIuPTR\"" n
-    ) args;
-    List.iter (
-      function
-      | OClosure { cbname } -> pr " %s=%%s" cbname
-      | OFlags (n, _, _) -> pr " %s=0x%%x" n
-    ) optargs;
+    let print_format_string () =
+      pr "enter:";
+      List.iter (
+        function
+        | Bool n -> pr " %s=%%s" n
+        | BytesOut (n, count)
+        | BytesPersistOut (n, count) -> pr " %s=<buf> %s=%%zu" n count
+        | BytesIn (n, count)
+        | BytesPersistIn (n, count) ->
+           pr " %s=\\\"%%s\\\" %s=%%zu" n count
+        | Closure { cbname } -> pr " %s=%%s" cbname
+        | Enum (n, _) -> pr " %s=%%d" n
+        | Flags (n, _) -> pr " %s=0x%%x" n
+        | Fd n | Int n -> pr " %s=%%d" n
+        | Int64 n -> pr " %s=%%\"PRIi64\"" n
+        | SizeT n -> pr " %s=%%zu" n
+        | SockAddrAndLen (n, len) -> pr " %s=<sockaddr> %s=%%d" n len
+        | Path n
+        | String n -> pr " %s=%%s" n
+        | StringList n -> pr " %s=%%s" n
+        | UInt n -> pr " %s=%%u" n
+        | UInt32 n -> pr " %s=%%\"PRIu32\"" n
+        | UInt64 n -> pr " %s=%%\"PRIu64\"" n
+        | UIntPtr n -> pr " %s=%%\"PRIuPTR\"" n
+      ) args;
+      List.iter (
+        function
+        | OClosure { cbname } -> pr " %s=%%s" cbname
+        | OFlags (n, _, _) -> pr " %s=0x%%x" n
+      ) optargs
+    in
+    pr_wrap_cstr print_format_string;
     pr "\"";
     let num_args = List.length args
     and num_optargs = List.length optargs in
     let num_allargs = num_args + num_optargs in
     if num_allargs > 0 then
-      pr ", ";
-    List.iteri (
-      fun i arg ->
-        (match arg with
-         | Bool n -> pr "%s ? \"true\" : \"false\"" n
-         | BytesOut (n, count)
-         | BytesPersistOut (n, count) -> pr "%s" count
-         | BytesIn (n, count)
-         | BytesPersistIn (n, count) ->
-            pr "%s_printable ? %s_printable : \"\", %s" n n count
-         | Closure _ -> pr "\"<fun>\""
-         | Enum (n, _) -> pr "%s" n
-         | Flags (n, _) -> pr "%s" n
-         | Fd n | Int n | Int64 n | SizeT n -> pr "%s" n
-         | SockAddrAndLen (_, len) -> pr "(int) %s" len
-         | Path n | String n | StringList n ->
-            pr "%s_printable ? %s_printable : \"\"" n n
-         | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr "%s" n
-        );
-        if i < num_allargs - 1 then
-          pr ", "
-    ) args;
-    List.iteri (
-      fun i optarg ->
-        (match optarg with
-         | OClosure { cbname } ->
-            pr "CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
-         | OFlags (n, _, _) -> pr "%s" n
-        );
-        if num_args + i < num_allargs - 1 then
-          pr ", "
-    ) optargs;
+      pr ",\n%s" indent;
+    let print_args () =
+      List.iteri (
+        fun i arg ->
+          (match arg with
+           | Bool n -> pr "%s ? \"true\" : \"false\"" n
+           | BytesOut (n, count)
+           | BytesPersistOut (n, count) -> pr "%s" count
+           | BytesIn (n, count)
+           | BytesPersistIn (n, count) ->
+              pr "%s_printable ? %s_printable : \"\", %s" n n count
+           | Closure _ -> pr "\"<fun>\""
+           | Enum (n, _) -> pr "%s" n
+           | Flags (n, _) -> pr "%s" n
+           | Fd n | Int n | Int64 n | SizeT n -> pr "%s" n
+           | SockAddrAndLen (_, len) -> pr "(int) %s" len
+           | Path n | String n | StringList n ->
+              pr "%s_printable ? %s_printable : \"\"" n n
+           | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr "%s" n
+          );
+          if i < num_allargs - 1 then
+            pr ", "
+      ) args;
+      List.iteri (
+        fun i optarg ->
+          (match optarg with
+           | OClosure { cbname } ->
+              pr "CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
+           | OFlags (n, _, _) -> pr "%s" n
+          );
+          if num_args + i < num_allargs - 1 then
+            pr ", "
+      ) optargs
+    in
+    pr_wrap ',' print_args;
     pr ");\n";
     List.iter (
       function
