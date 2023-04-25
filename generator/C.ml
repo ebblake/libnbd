@@ -622,7 +622,7 @@ let generate_lib_api_c () =
            sprintf "0x%x" !v
         | None -> "LIBNBD_" ^ flag_prefix ^ "_MASK" in
       let guard = match guard with
-        | Some value -> " && " ^ value
+        | Some value -> " &&\n      " ^ value
         | None -> "" in
       pr "  if (unlikely ((%s & ~%s) != 0)%s) {\n" n mask guard;
       pr "    set_error (EINVAL, \"%%s: invalid value for flag: 0x%%x\",\n";
