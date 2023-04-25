@@ -100,8 +100,12 @@ let generate_python_libnbdmod_c () =
   pr "static PyMethodDef methods[] = {\n";
   List.iter (
     fun name ->
-      pr "  { (char *) \"%s\", nbd_internal_py_%s, METH_VARARGS, NULL },\n"
-         name name;
+      pr "  {\n";
+      pr "    \"%s\",\n" name;
+      pr "    nbd_internal_py_%s,\n" name;
+      pr "    METH_VARARGS,\n";
+      pr "    NULL\n";
+      pr "  },\n"
   ) ([ "create"; "close";
        "display_version";
        "alloc_aio_buffer";
