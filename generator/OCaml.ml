@@ -806,10 +806,13 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
     pr "nbd_internal_ocaml_nbd_%s_byte (value *argv, int argn)\n" name;
     pr "{\n";
     pr "  return nbd_internal_ocaml_nbd_%s (" name;
-    for i = 0 to num_args - 1 do
-      if i > 0 then pr ", ";
-      pr "argv[%d]" i
-    done;
+    let print_args () =
+      for i = 0 to num_args - 1 do
+        if i > 0 then pr ", ";
+        pr "argv[%d]" i
+      done
+    in
+    pr_wrap ',' print_args;
     pr ");\n";
     pr "}\n";
     pr "\n"
