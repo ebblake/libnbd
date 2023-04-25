@@ -798,14 +798,15 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
   pr "}\n";
   pr "\n";
 
-  if num_params args optargs > 5 then (
+  let num_args = num_params args optargs in
+  if num_args > 5 then (
     pr "/* Byte-code compat function because this method has > 5 parameters.\n";
     pr " */\n";
     pr "value\n";
     pr "nbd_internal_ocaml_nbd_%s_byte (value *argv, int argn)\n" name;
     pr "{\n";
     pr "  return nbd_internal_ocaml_nbd_%s (" name;
-    for i = 0 to num_params args optargs - 1 do
+    for i = 0 to num_args - 1 do
       if i > 0 then pr ", ";
       pr "argv[%d]" i
     done;
