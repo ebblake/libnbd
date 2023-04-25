@@ -213,6 +213,60 @@ let pr_wrap ?(maxcol = 76) c code =
       *)
      pr "%s" (String.concat "\n" rest)
 
+(* Wrap the C string literal output at ‘maxcol’, breaking up lines when a space
+ * character occurs.  For example:
+ *   foobar = "a b c d e f g h i j k"
+ *             └── pr_wrap_cstr ───┘
+ * becomes:
+ *   foobar = "a b c d "
+ *            "e f g h "
+ *            "i j k"
+ *
+ * Note that:
+ * - ‘code’ MUST NOT produce the surrounding quotes,
+ * - ‘code’ MUST NOT produce multiple lines,
+ * - ‘code’ MUST do its own quoting,
+ * - space characters produced by ‘code’ cannot be escaped from wrapping.
+ *)
+let pr_wrap_cstr ?(maxcol = 76) code =
+  (* Just before entering ‘pr_wrap_cstr’, a leading quote must have been
+   * produced.
+   *)
+  let wrapping_col = !col - 1 in
+  assert (wrapping_col >= 0);
+
+  let b = pr_buf code in
+  let lines = nsplit "\n" (Buffer.contents b) in
+  match lines with
+  | [] -> ()
+  | line :: [] ->
+     let fields = nsplit " " line in
+     let nfields = List.length fields in
+     let indent = spaces wrapping_col in
+     List.iteri
+       (fun i field ->
+          (* Append a space character to each field except the last. *)
+          let f = if i < nfields - 1 then field ^ " " else field in
+
+          (* Terminate the string literal, insert a line break, and start a
+           * properly indented new string literal, before printing the field, if
+           * (a) the field is not the first one in this string literal, and (b)
+           * printing the field plus a literal-terminating quote would not fit
+           * in ‘maxcol’.
+           *
+           * Note that this way, the literal-terminating quote will always fit
+           * in ‘maxcol’, except when the *sole* field in the literal is too
+           * long.
+           *)
+          if !col > wrapping_col + 1 &&
+             !col + (String.length f) + 1 > maxcol then
+            pr "\"\n%s\"" indent;
+
+          (* Print the field. *)
+          pr "%s" f
+       ) fields
+  | _ -> assert false
+
 let output_lineno () = !lineno
 let output_column () = !col
 
