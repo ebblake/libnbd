@@ -524,8 +524,13 @@ let print_ocaml_closure_wrapper { cbname; cbargs } =
   List.iter (
     function
     | CBArrayAndLen (UInt32 n, count) ->
-       pr "  %sv = nbd_internal_ocaml_alloc_int64_from_uint32_array (%s, %s);\n"
-         n n count;
+       pr "  %sv = " n;
+       let fncol = output_column () in
+       let indent = spaces fncol in
+       pr "nbd_internal_ocaml_alloc_i64_from_u32_array (\n";
+       pr "%s  %s,\n" indent n;
+       pr "%s  %s\n" indent count;
+       pr "%s);\n" indent
     | CBBytesIn (n, len) ->
        pr "  %sv = caml_alloc_initialized_string (%s, %s);\n" n len n
     | CBInt n | CBUInt n ->
