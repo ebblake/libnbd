@@ -775,27 +775,31 @@ let generate_lib_api_c () =
     ) optargs;
     pr "\"";
     List.iter (
-      function
-      | Bool n -> pr ", %s ? \"true\" : \"false\"" n
-      | BytesOut (n, count)
-      | BytesPersistOut (n, count) -> pr ", %s" count
-      | BytesIn (n, count)
-      | BytesPersistIn (n, count) ->
-         pr ", %s_printable ? %s_printable : \"\", %s" n n count
-      | Closure { cbname } -> ()
-      | Enum (n, _) -> pr ", %s" n
-      | Flags (n, _) -> pr ", %s" n
-      | Fd n | Int n | Int64 n | SizeT n -> pr ", %s" n
-      | SockAddrAndLen (_, len) -> pr ", (int) %s" len
-      | Path n | String n | StringList n ->
-         pr ", %s_printable ? %s_printable : \"\"" n n
-      | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr ", %s" n
+      fun arg ->
+        (match arg with
+         | Bool n -> pr ", %s ? \"true\" : \"false\"" n
+         | BytesOut (n, count)
+         | BytesPersistOut (n, count) -> pr ", %s" count
+         | BytesIn (n, count)
+         | BytesPersistIn (n, count) ->
+            pr ", %s_printable ? %s_printable : \"\", %s" n n count
+         | Closure { cbname } -> ()
+         | Enum (n, _) -> pr ", %s" n
+         | Flags (n, _) -> pr ", %s" n
+         | Fd n | Int n | Int64 n | SizeT n -> pr ", %s" n
+         | SockAddrAndLen (_, len) -> pr ", (int) %s" len
+         | Path n | String n | StringList n ->
+            pr ", %s_printable ? %s_printable : \"\"" n n
+         | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr ", %s" n
+        )
     ) args;
     List.iter (
-      function
-      | OClosure { cbname } ->
-         pr ", CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
-      | OFlags (n, _, _) -> pr ", %s" n
+      fun optarg ->
+        (match optarg with
+         | OClosure { cbname } ->
+            pr ", CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
+         | OFlags (n, _, _) -> pr ", %s" n
+        )
     ) optargs;
     pr ");\n";
     List.iter (
