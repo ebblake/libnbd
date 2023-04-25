@@ -533,17 +533,21 @@ let generate_lib_api_c () =
       pr "{\n";
       pr "  const enum state state = get_public_state (h);\n";
       pr "\n";
+      let or_nl_indent = " ||\n        " in
       let tests =
         List.map (
           function
           | Created -> "nbd_internal_is_state_created (state)"
           | Connecting -> "nbd_internal_is_state_connecting (state)"
           | Negotiating -> "nbd_internal_is_state_negotiating (state)"
-          | Connected -> "nbd_internal_is_state_ready (state) || nbd_internal_is_state_processing (state)"
+          | Connected ->
+              "nbd_internal_is_state_ready (state)" ^
+              or_nl_indent ^
+              "nbd_internal_is_state_processing (state)"
           | Closed -> "nbd_internal_is_state_closed (state)"
           | Dead -> "nbd_internal_is_state_dead (state)"
         ) permitted_states in
-      pr "  if (!(%s)) {\n" (String.concat " ||\n        " tests);
+      pr "  if (!(%s)) {\n" (String.concat or_nl_indent tests);
       pr "    set_error (nbd_internal_is_state_created (state) ? ENOTCONN : EINVAL,\n";
       pr "               \"invalid state: %%s: the handle must be %%s\",\n";
       pr "               nbd_internal_state_short_string (state),\n";
