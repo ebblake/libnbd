@@ -757,16 +757,16 @@ let generate_lib_api_c () =
       | Enum (n, _) -> pr " %s=%%d" n
       | Flags (n, _) -> pr " %s=0x%%x" n
       | Fd n | Int n -> pr " %s=%%d" n
-      | Int64 n -> pr " %s=%%\" PRIi64 \"" n
+      | Int64 n -> pr " %s=%%\"PRIi64\"" n
       | SizeT n -> pr " %s=%%zu" n
       | SockAddrAndLen (n, len) -> pr " %s=<sockaddr> %s=%%d" n len
       | Path n
       | String n -> pr " %s=%%s" n
       | StringList n -> pr " %s=%%s" n
       | UInt n -> pr " %s=%%u" n
-      | UInt32 n -> pr " %s=%%\" PRIu32 \"" n
-      | UInt64 n -> pr " %s=%%\" PRIu64 \"" n
-      | UIntPtr n -> pr " %s=%%\" PRIuPTR \"" n
+      | UInt32 n -> pr " %s=%%\"PRIu32\"" n
+      | UInt64 n -> pr " %s=%%\"PRIu64\"" n
+      | UIntPtr n -> pr " %s=%%\"PRIuPTR\"" n
     ) args;
     List.iter (
       function
