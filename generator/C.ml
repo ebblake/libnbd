@@ -774,32 +774,41 @@ let generate_lib_api_c () =
       | OFlags (n, _, _) -> pr " %s=0x%%x" n
     ) optargs;
     pr "\"";
-    List.iter (
-      fun arg ->
+    let num_args = List.length args
+    and num_optargs = List.length optargs in
+    let num_allargs = num_args + num_optargs in
+    if num_allargs > 0 then
+      pr ", ";
+    List.iteri (
+      fun i arg ->
         (match arg with
-         | Bool n -> pr ", %s ? \"true\" : \"false\"" n
+         | Bool n -> pr "%s ? \"true\" : \"false\"" n
          | BytesOut (n, count)
-         | BytesPersistOut (n, count) -> pr ", %s" count
+         | BytesPersistOut (n, count) -> pr "%s" count
          | BytesIn (n, count)
          | BytesPersistIn (n, count) ->
-            pr ", %s_printable ? %s_printable : \"\", %s" n n count
-         | Closure _ -> pr ", \"<fun>\""
-         | Enum (n, _) -> pr ", %s" n
-         | Flags (n, _) -> pr ", %s" n
-         | Fd n | Int n | Int64 n | SizeT n -> pr ", %s" n
-         | SockAddrAndLen (_, len) -> pr ", (int) %s" len
+            pr "%s_printable ? %s_printable : \"\", %s" n n count
+         | Closure _ -> pr "\"<fun>\""
+         | Enum (n, _) -> pr "%s" n
+         | Flags (n, _) -> pr "%s" n
+         | Fd n | Int n | Int64 n | SizeT n -> pr "%s" n
+         | SockAddrAndLen (_, len) -> pr "(int) %s" len
          | Path n | String n | StringList n ->
-            pr ", %s_printable ? %s_printable : \"\"" n n
-         | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr ", %s" n
-        )
+            pr "%s_printable ? %s_printable : \"\"" n n
+         | UInt n | UInt32 n | UInt64 n | UIntPtr n -> pr "%s" n
+        );
+        if i < num_allargs - 1 then
+          pr ", "
     ) args;
-    List.iter (
-      fun optarg ->
+    List.iteri (
+      fun i optarg ->
         (match optarg with
          | OClosure { cbname } ->
-            pr ", CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
-         | OFlags (n, _, _) -> pr ", %s" n
-        )
+            pr "CALLBACK_IS_NULL (%s_callback) ? \"<fun>\" : \"NULL\"" cbname
+         | OFlags (n, _, _) -> pr "%s" n
+        );
+        if num_args + i < num_allargs - 1 then
+          pr ", "
     ) optargs;
     pr ");\n";
     List.iter (
