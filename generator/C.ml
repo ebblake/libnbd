@@ -858,20 +858,23 @@ let generate_lib_api_c () =
     )
     else
       pr "    debug_direct (";
-    if may_set_error then
-      pr "h, \"leave: ret="
-    else
-      pr "h, \"nbd_%s\", \"leave: ret=" name;
-    (match ret with
-     | RBool | RErr | RFd | RInt | REnum _ -> pr "%%d\", ret"
-     | RInt64 | RCookie -> pr "%%\" PRIi64, ret"
-     | RSizeT -> pr "%%zd\", ret"
-     | RString -> pr "%%s\", ret_printable ? ret_printable : \"\""
-     | RStaticString -> pr "%%s\", ret"
-     | RUInt | RFlags _ -> pr "%%u\", ret"
-     | RUIntPtr -> pr "%%\" PRIuPTR, ret"
-     | RUInt64 -> pr "%%\" PRIu64, ret"
-    );
+    let print_args () =
+      if may_set_error then
+        pr "h, \"leave: ret="
+      else
+        pr "h, \"nbd_%s\", \"leave: ret=" name;
+      (match ret with
+       | RBool | RErr | RFd | RInt | REnum _ -> pr "%%d\", ret"
+       | RInt64 | RCookie -> pr "%%\" PRIi64, ret"
+       | RSizeT -> pr "%%zd\", ret"
+       | RString -> pr "%%s\", ret_printable ? ret_printable : \"\""
+       | RStaticString -> pr "%%s\", ret"
+       | RUInt | RFlags _ -> pr "%%u\", ret"
+       | RUIntPtr -> pr "%%\" PRIuPTR, ret"
+       | RUInt64 -> pr "%%\" PRIu64, ret"
+      )
+    in
+    pr_wrap ',' print_args;
     pr ");\n";
     if may_set_error then (
       (match ret with
