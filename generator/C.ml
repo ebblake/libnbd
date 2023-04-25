@@ -753,7 +753,7 @@ let generate_lib_api_c () =
       | BytesIn (n, count)
       | BytesPersistIn (n, count) ->
          pr " %s=\\\"%%s\\\" %s=%%zu" n count
-      | Closure { cbname } -> pr " %s=<fun>" cbname
+      | Closure { cbname } -> pr " %s=%%s" cbname
       | Enum (n, _) -> pr " %s=%%d" n
       | Flags (n, _) -> pr " %s=0x%%x" n
       | Fd n | Int n -> pr " %s=%%d" n
@@ -783,7 +783,7 @@ let generate_lib_api_c () =
          | BytesIn (n, count)
          | BytesPersistIn (n, count) ->
             pr ", %s_printable ? %s_printable : \"\", %s" n n count
-         | Closure { cbname } -> ()
+         | Closure _ -> pr ", \"<fun>\""
          | Enum (n, _) -> pr ", %s" n
          | Flags (n, _) -> pr ", %s" n
          | Fd n | Int n | Int64 n | SizeT n -> pr ", %s" n
