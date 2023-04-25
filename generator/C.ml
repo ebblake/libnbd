@@ -420,7 +420,8 @@ let generate_include_libnbd_h () =
   pr "\n";
   pr "#ifndef LIBNBD_ATTRIBUTE_NONNULL\n";
   pr "#if defined (__GNUC__) && LIBNBD_GCC_VERSION >= 120000 /* gcc >= 12.0 */\n";
-  pr "#define LIBNBD_ATTRIBUTE_NONNULL(...) __attribute__ ((__nonnull__ (__VA_ARGS__)))\n";
+  pr "#define LIBNBD_ATTRIBUTE_NONNULL(...) \\\n";
+  pr "  __attribute__ ((__nonnull__ (__VA_ARGS__)))\n";
   pr "#else\n";
   pr "#define LIBNBD_ATTRIBUTE_NONNULL(...)\n";
   pr "#endif\n";
