@@ -151,6 +151,19 @@ let pr fs =
 
 let spaces n = String.make n ' '
 
+(* Save the current output channel and replace it with a temporary buffer while
+ * running ‘code’.  Return the buffer.
+ *)
+let pr_buf code =
+  let old_chan = !chan in
+  let wrapping_col = !col in
+  let b = Buffer.create 1024 in
+  chan := Buffer b;
+  let exn = try code (); None with exn -> Some exn in
+  chan := old_chan;
+  col := wrapping_col;
+  match exn with None -> b | Some exn -> raise exn
+
 (* Wrap the output at maxcol, breaking up lines when a 'c' character
  * occurs.  For example:
  *   foobar = a, b, c, d, e, f, g
@@ -165,15 +178,8 @@ let pr_wrap ?(maxcol = 76) c code =
    * temporary buffer while running ‘code’.  Then we wrap the
    * buffer and write it to the restored channel.
    *)
-  let old_chan = !chan in
+  let b = pr_buf code in
   let wrapping_col = !col in
-  let b = Buffer.create 1024 in
-  chan := Buffer b;
-  let exn = try code (); None with exn -> Some exn in
-  chan := old_chan;
-  col := wrapping_col;
-  (match exn with None -> () | Some exn -> raise exn);
-
   let lines = nsplit "\n" (Buffer.contents b) in
   match lines with
   | [] -> ()
