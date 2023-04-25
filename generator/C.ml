@@ -551,7 +551,9 @@ let generate_lib_api_c () =
       pr "    set_error (nbd_internal_is_state_created (state) ? ENOTCONN : EINVAL,\n";
       pr "               \"invalid state: %%s: the handle must be %%s\",\n";
       pr "               nbd_internal_state_short_string (state),\n";
-      pr "               \"%s\");\n" (permitted_state_text permitted_states);
+      pr "               \"";
+      pr_wrap_cstr (fun () -> pr "%s" (permitted_state_text permitted_states));
+      pr "\");\n";
       pr "    return false;\n";
       pr "  }\n";
       pr "  return true;\n";
