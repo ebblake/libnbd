@@ -569,6 +569,8 @@ let generate_lib_api_c () =
     print_arg_list ~wrap:true ~handle:true args optargs;
     pr "\n";
     pr "{\n";
+    if permitted_states <> [] then
+      pr "  bool p;\n";
     pr "  %s ret;\n" ret_c_type;
     pr "\n";
     if may_set_error then (
@@ -599,7 +601,8 @@ let generate_lib_api_c () =
       let value = match errcode with
         | Some value -> value
         | None -> assert false in
-      pr "  if (unlikely (!%s_in_permitted_state (h))) {\n" name;
+      pr "  p = %s_in_permitted_state (h);\n" name;
+      pr "  if (unlikely (!p)) {\n";
       pr "    ret = %s;\n" value;
       pr "    goto out;\n";
       pr "  }\n";
