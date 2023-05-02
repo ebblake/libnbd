@@ -566,7 +566,8 @@ let generate_lib_api_c () =
     let ret_c_type = type_of_ret ret and errcode = errcode_of_ret ret in
     pr "%s\n" ret_c_type;
     pr "nbd_%s " name;
-    print_arg_list ~wrap:true ~handle:true args optargs;
+    print_arg_list ~wrap:true ~handle:true ~parens:(ParensNewLineWithIndent 0)
+      args optargs;
     pr "\n";
     pr "{\n";
     if permitted_states <> [] then
