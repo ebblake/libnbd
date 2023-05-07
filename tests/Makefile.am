@@ -231,6 +231,7 @@ check_PROGRAMS += \
 	meta-base-allocation \
 	closure-lifetimes \
 	pread-initialize \
+	socket-activation-name \
 	$(NULL)
 
 TESTS += \
@@ -301,6 +302,7 @@ TESTS += \
 	meta-base-allocation \
 	closure-lifetimes \
 	pread-initialize \
+	socket-activation-name \
 	$(NULL)
 
 # This test is compiled but not run because it requires a fixed port:
@@ -641,6 +643,12 @@ closure_lifetimes_LDADD = $(top_builddir)/lib/libnbd.la
 
 pread_initialize_SOURCES = pread-initialize.c
 pread_initialize_LDADD = $(top_builddir)/lib/libnbd.la
+
+socket_activation_name_SOURCES = \
+	socket-activation-name.c \
+	requires.c \
+	requires.h
+socket_activation_name_LDADD = $(top_builddir)/lib/libnbd.la
 
 #----------------------------------------------------------------------
 # Testing TLS support.
