@@ -298,7 +298,9 @@ let generate_lib_states_h () =
   pr "enum state {\n";
   List.iter (
     fun ({ comment; parsed = { display_name; state_enum } }) ->
-      pr "  /* %s: %s */\n" display_name comment;
+      pr "  ";
+      pr_wrap_c_comment (fun () -> pr "%s: %s" display_name comment);
+      pr "\n";
       pr "  %s,\n" state_enum;
       pr "\n";
   ) states;
@@ -346,7 +348,8 @@ let generate_lib_states_c () =
   List.iter (
     fun { comment; parsed = { display_name; state_enum; loc; code } } ->
       pr "\n";
-      pr "/* %s: %s */\n" display_name comment;
+      pr_wrap_c_comment (fun () -> pr "%s: %s" display_name comment);
+      pr "\n";
       pr "static int\n";
       pr "enter_%s (struct nbd_handle *h,\n" state_enum;
       pr "             enum state *next_state,\n";
