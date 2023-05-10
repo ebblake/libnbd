@@ -333,7 +333,9 @@ let generate_lib_states_h () =
   pr "/* State transitions defined in states.c. */\n";
   List.iter (
     fun { parsed = { state_enum } } ->
-      pr "extern int nbd_internal_enter_%s (struct nbd_handle *h, bool *blocked);\n" state_enum;
+      pr "extern int nbd_internal_enter_%s (\n" state_enum;
+      pr "             struct nbd_handle *h, bool *blocked\n";
+      pr "           );\n"
   ) states
 
 let generate_lib_states_c () =
@@ -366,8 +368,9 @@ let generate_lib_states_c () =
       let output_loc = "lib/states.c", output_lineno () + 1 in
       pr "%s\n" (line_directive_of_location output_loc);
       pr "int\n";
-      pr "nbd_internal_enter_%s (struct nbd_handle *h, bool *blocked)\n"
-        state_enum;
+      pr "nbd_internal_enter_%s (\n" state_enum;
+      pr "  struct nbd_handle *h, bool *blocked\n";
+      pr ")\n";
       pr "{\n";
       pr "  int r;\n";
       pr "  enum state next_state = %s;\n" state_enum;
