@@ -353,9 +353,9 @@ let generate_lib_states_c () =
       pr_wrap_c_comment (fun () -> pr "%s: %s" display_name comment);
       pr "\n";
       pr "static int\n";
-      pr "enter_%s (struct nbd_handle *h,\n" state_enum;
-      pr "             enum state *next_state,\n";
-      pr "             bool *blocked)\n";
+      pr "enter_%s (\n" state_enum;
+      pr "  struct nbd_handle *h, enum state *next_state, bool *blocked\n";
+      pr ")\n";
       pr "{\n";
       if code <> "" then (
         pr "%s\n" (line_directive_of_location loc);
@@ -375,7 +375,9 @@ let generate_lib_states_c () =
       pr "  int r;\n";
       pr "  enum state next_state = %s;\n" state_enum;
       pr "\n";
-      pr "  r = enter_%s (h, &next_state, blocked);\n" state_enum;
+      pr "  r = enter_%s (\n" state_enum;
+      pr "        h, &next_state, blocked\n";
+      pr "      );\n";
       pr "  if (get_next_state (h) != next_state) {\n";
       pr "    debug (h, \"transition: %%s -> %%s\",\n";
       pr "           \"%s\",\n" display_name;
