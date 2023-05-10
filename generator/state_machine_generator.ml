@@ -414,10 +414,15 @@ let generate_lib_states_run_c () =
             pr "    case %s:\n" (c_string_of_external_event e);
             if state != next_state then (
               pr "      set_next_state (h, %s);\n" next_state.parsed.state_enum;
-              pr "      debug (h, \"event %%s: %%s -> %%s\",\n";
-              pr "             \"%s\", \"%s\", \"%s\");\n"
-                 (string_of_external_event e)
-                 display_name next_state.parsed.display_name;
+              pr "      debug (";
+              let print_debug_args () =
+                pr "h, \"event %%s: %%s -> %%s\", ";
+                pr "\"%s\", \"%s\", \"%s\");"
+                   (string_of_external_event e)
+                   display_name next_state.parsed.display_name;
+              in
+              pr_wrap ',' print_debug_args;
+              pr "\n"
             );
             pr "      goto ok;\n";
         ) events;
