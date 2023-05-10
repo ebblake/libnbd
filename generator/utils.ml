@@ -267,6 +267,93 @@ let pr_wrap_cstr ?(maxcol = 76) code =
        ) fields
   | _ -> assert false
 
+(* Wrap a string as a (potentially multi-line) C comment. Two things to note:
+ * - the function produces both the starting slash-star and the ending
+ *   star-slash,
+ * - newline characters in the input are not allowed.
+ *)
+let pr_wrap_c_comment ?(maxcol = 80) code =
+  (* The comment delimiters. *)
+  let start = "/* "
+  and sep   = " * "
+  and stop  = " */"
+
+  (* Format the comment into a buffer, and append a space character, for forcing
+   * a nonspace -> space transition at the end of the comment, provided the
+   * comment ends with a nonspace. Note that trailing spaces will be swallowed
+   * anyway, as only nonspace -> space transitions produce output.
+   *)
+  and comment = pr_buf (fun () -> code (); pr " ")
+
+  (* Capture the current column / indentation. *)
+  and indent = spaces !col
+
+  (* Whether we're currently scanning spaces. We start the loop under the
+   * assumption "scanning spaces" because a space -> nonspace transition does
+   * not try to output anything.
+   *)
+  and scanning_spaces = ref true
+
+  (* The "buffers" for accumulating spaces and nonspaces. *)
+  and spaces_start = ref 0
+  and nonspaces_start = ref 0
+
+  (* Whether we've needed to insert at least one line break. *)
+  and multiline = ref false in
+
+  pr "%s" start;
+
+  for i = 0 to Buffer.length comment - 1 do
+    let ch = Buffer.nth comment i in
+
+    (* Newlines are invalid... *)
+    assert (ch <> '\n');
+
+    match !scanning_spaces, ch with
+    | true, ' ' ->
+        ()
+    | true, _ ->
+        (* Space -> nonspace transition. *)
+        scanning_spaces := false;
+        nonspaces_start := i
+    | false, ' ' ->
+        (* Nonspace -> space transition. If the buffered spaces:
+         *
+         *   nonspaces_start - spaces_start
+         *
+         * plus the buffered nonspaces:
+         *
+         *   i - nonspaces_start
+         *
+         * fit on the current line, then print both buffers. (Note that the sum
+         * of those addends is just (i - spaces_start).)
+         *
+         * Otherwise, insert a line break and a comment line separator, and only
+         * print the nonspaces.
+         *)
+        if !col + (i - !spaces_start) <= maxcol then
+          pr "%s" (Buffer.sub comment !spaces_start (i - !spaces_start))
+        else (
+          pr "\n%s%s%s" indent sep
+            (Buffer.sub comment !nonspaces_start (i - !nonspaces_start));
+          multiline := true
+        );
+
+        scanning_spaces := true;
+        spaces_start := i
+    | false, _ ->
+        ()
+  done;
+
+  (* If the comment has fit on a single line, and we've got room left for the
+   * terminator, then place the terminator on the same line. Otherwise, break
+   * the terminator to a new line.
+   *)
+  if not !multiline && !col + String.length stop <= maxcol then
+    pr "%s" stop
+  else
+    pr "\n%s%s" indent stop
+
 let output_lineno () = !lineno
 let output_column () = !col
 

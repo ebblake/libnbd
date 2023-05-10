@@ -54,6 +54,7 @@ val output_to : string -> (unit -> 'a) -> unit
 val pr : ('a, unit, string, unit) format4 -> 'a
 val pr_wrap : ?maxcol:int -> char -> (unit -> 'a) -> unit
 val pr_wrap_cstr : ?maxcol:int -> (unit -> 'a) -> unit
+val pr_wrap_c_comment : ?maxcol:int -> (unit -> 'a) -> unit
 val output_lineno : unit -> int
 val output_column : unit -> int
 
