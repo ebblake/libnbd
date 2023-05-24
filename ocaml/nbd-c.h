@@ -49,7 +49,7 @@ static inline value
 caml_alloc_initialized_string (mlsize_t len, const char *p)
 {
   value sv = caml_alloc_string (len);
-  memcpy ((char *) String_val (sv), p, len);
+  memcpy (String_val (sv), p, len);
   return sv;
 }
 #endif
@@ -70,7 +70,7 @@ extern void nbd_internal_ocaml_exception_in_wrapper (const char *, value);
 #define NBD_val(v) (*((struct nbd_handle **)Data_custom_val (v)))
 
 static struct custom_operations libnbd_custom_operations = {
-  (char *) "libnbd_custom_operations",
+  "libnbd_custom_operations",
   nbd_internal_ocaml_handle_finalize,
   custom_compare_default,
   custom_hash_default,
@@ -110,7 +110,7 @@ struct nbd_buffer {
 #define NBD_buffer_val(v) ((struct nbd_buffer *)Data_custom_val (v))
 
 static struct custom_operations nbd_buffer_custom_operations = {
-  (char *) "nbd_buffer_custom_operations",
+  "nbd_buffer_custom_operations",
   nbd_internal_ocaml_buffer_finalize,
   custom_compare_default,
   custom_hash_default,

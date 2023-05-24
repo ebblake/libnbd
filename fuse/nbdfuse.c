@@ -415,7 +415,7 @@ main (int argc, char *argv[])
       handles_append (&nbd, h); /* reserved above, so can't fail */
     }
   }
-  connections = (unsigned) nbd.len;
+  connections = nbd.len;
   if (verbose)
     fprintf (stderr, "nbdfuse: connections=%u\n", connections);
 
@@ -424,7 +424,7 @@ main (int argc, char *argv[])
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
-  size = (uint64_t) ssize;
+  size = ssize;
 
   /* If the remote NBD server is readonly, then act as if the '-r'
    * flag was given on the nbdfuse command line.

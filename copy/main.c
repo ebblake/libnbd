@@ -371,7 +371,8 @@ main (int argc, char *argv[])
 #else
     t = 1;
 #endif
-    threads = (unsigned) t;
+    assert (t <= UINT_MAX);
+    threads = t;
   }
 
   if (synchronous)
@@ -534,7 +535,7 @@ open_local (const char *filename, direction d)
   }
   if (S_ISREG (stat.st_mode))   /* Regular file. */
     return file_create (filename, fd,
-                        stat.st_size, (uint64_t) stat.st_blksize, false, d);
+                        stat.st_size, stat.st_blksize, false, d);
   else if (S_ISBLK (stat.st_mode)) { /* Block device. */
     unsigned int blkioopt;
 
@@ -549,7 +550,7 @@ open_local (const char *filename, direction d)
 #endif
 
     return file_create (filename, fd,
-                        stat.st_size, (uint64_t) blkioopt, true, d);
+                        stat.st_size, blkioopt, true, d);
   }
   else {              /* Probably stdin/stdout, a pipe or a socket. */
     synchronous = true;        /* Force synchronous mode for pipes. */

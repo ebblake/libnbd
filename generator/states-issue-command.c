@@ -46,7 +46,7 @@ STATE_MACHINE {
   h->request.type = htobe16 (cmd->type);
   h->request.handle = htobe64 (cmd->cookie);
   h->request.offset = htobe64 (cmd->offset);
-  h->request.count = htobe32 ((uint32_t) cmd->count);
+  h->request.count = htobe32 (cmd->count);
   h->chunks_sent++;
   h->wbuf = &h->request;
   h->wlen = sizeof (h->request);

@@ -219,7 +219,7 @@ main (int argc, char *argv[])
    * or newer with its --no-sr kill switch.
    */
   requires ("nbdkit --no-sr --help");
-  args[ARRAY_SIZE (args) - 2] = (char *) "--no-sr";
+  args[ARRAY_SIZE (args) - 2] = "--no-sr";
   nbd = nbd_create ();
   if (nbd == NULL ||
       nbd_set_opt_mode (nbd, true) == -1 ||

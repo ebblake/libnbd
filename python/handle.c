@@ -46,7 +46,7 @@ static inline PyObject *
 put_handle (struct nbd_handle *h)
 {
   assert (h);
-  return PyCapsule_New ((void *) h, "nbd_handle", NULL);
+  return PyCapsule_New (h, "nbd_handle", NULL);
 }
 
 PyObject *

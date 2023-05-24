@@ -347,7 +347,7 @@ main (int argc, char *argv[])
       handles_append (&nbd, h); /* reserved above, so can't fail */
     }
   }
-  connections = (unsigned) nbd.len;
+  connections = nbd.len;
 
   /* Get the size and preferred block sizes. */
   rs = nbd_get_size (nbd.ptr[0]);
@@ -355,7 +355,7 @@ main (int argc, char *argv[])
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
-  size = (uint64_t) rs;
+  size = rs;
 
   rs = nbd_get_block_size (nbd.ptr[0], LIBNBD_SIZE_MAXIMUM);
   if (rs <= 0 || rs > 64 * 1024 * 1024)

@@ -154,7 +154,7 @@ nbd_internal_set_querylist (struct nbd_handle *h, char **queries)
 const char *
 nbd_internal_fork_safe_itoa (long v, char *buf, size_t bufsize)
 {
-  unsigned long uv = (unsigned long) v;
+  unsigned long uv = v;
   size_t i = bufsize - 1;
   bool neg = false;
 
@@ -282,7 +282,7 @@ nbd_internal_fork_safe_perror (const char *s)
 #endif
 #endif
   if (!m)
-    m = nbd_internal_fork_safe_itoa ((long) errno, buf, sizeof buf);
+    m = nbd_internal_fork_safe_itoa (errno, buf, sizeof buf);
   xwritel (STDERR_FILENO, s, ": ", m, "\n", (char *)NULL);
 
   /* Restore original errno in case it was disturbed by the system

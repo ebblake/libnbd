@@ -49,7 +49,7 @@ get_handle (PyObject *obj)
 {
   assert (obj);
   assert (obj != Py_None);
-  return (struct nbd_handle *) PyCapsule_GetPointer(obj, \"nbd_handle\");
+  return PyCapsule_GetPointer(obj, \"nbd_handle\");
 }
 
 /* nbd.Error exception. */

@@ -293,8 +293,7 @@ STATE_MACHINE {
     }
 
     char buf[32];
-    const char *v =
-      nbd_internal_fork_safe_itoa ((long) getpid (), buf, sizeof buf);
+    const char *v = nbd_internal_fork_safe_itoa (getpid (), buf, sizeof buf);
     NBD_INTERNAL_FORK_SAFE_ASSERT (strlen (v) <= sact_var[pid_ofs].value_len);
     strcpy (env.ptr[pid_ofs] + sact_var[pid_ofs].prefix_len, v);
 

@@ -396,7 +396,7 @@ nbdfuse_read (const char *path, char *buf,
 
   CHECK_NBD_ASYNC_ERROR (nbd_aio_pread (h, buf, count, offset, cb, 0));
 
-  return (int) count;
+  return count;
 }
 
 static int
