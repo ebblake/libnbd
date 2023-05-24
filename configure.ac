@@ -456,7 +456,7 @@ AS_IF([test "x$OCAMLC" != "xno" && test "x$OCAMLFIND" != "xno" && \
     AC_MSG_CHECKING([for caml_alloc_custom_mem])
     cat >conftest.c <<'EOF'
 #include <caml/custom.h>
-int main () { char *p = (void *) caml_alloc_custom_mem; return 0; }
+int main () { char *p = (void *)caml_alloc_custom_mem; return 0; }
 EOF
     AS_IF([$OCAMLC conftest.c >&AS_MESSAGE_LOG_FD 2>&1],[
         AC_MSG_RESULT([yes])
@@ -474,7 +474,7 @@ AS_IF([test "x$OCAMLC" != "xno" && test "x$OCAMLFIND" != "xno" && \
     AC_MSG_CHECKING([for caml_alloc_initialized_string])
     cat >conftest.c <<'EOF'
 #include <caml/alloc.h>
-int main () { char *p = (void *) caml_alloc_initialized_string; return 0; }
+int main () { char *p = (void *)caml_alloc_initialized_string; return 0; }
 EOF
     AS_IF([$OCAMLC conftest.c >&AS_MESSAGE_LOG_FD 2>&1],[
         AC_MSG_RESULT([yes])
@@ -492,7 +492,7 @@ AS_IF([test "x$OCAMLC" != "xno" && test "x$OCAMLFIND" != "xno" && \
     AC_MSG_CHECKING([for caml_unix_get_sockaddr])
     cat >conftest.c <<'EOF'
 #include <caml/socketaddr.h>
-int main () { char *p = (void *) caml_unix_get_sockaddr; return 0; }
+int main () { char *p = (void *)caml_unix_get_sockaddr; return 0; }
 EOF
     AS_IF([$OCAMLC conftest.c >&AS_MESSAGE_LOG_FD 2>&1],[
         AC_MSG_RESULT([yes])

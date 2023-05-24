@@ -25,7 +25,7 @@ STATE_MACHINE {
    */
   h->rbuf = &h->sbuf.old_handshake;
   h->rlen = sizeof h->sbuf.old_handshake;
-  h->rbuf = (char *) h->rbuf + 16;
+  h->rbuf = (char *)h->rbuf + 16;
   h->rlen -= 16;
   SET_NEXT_STATE (%RECV_REMAINING);
   return 0;

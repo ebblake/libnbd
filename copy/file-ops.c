@@ -334,7 +334,7 @@ file_close (struct rw *rw)
 static void
 file_truncate (struct rw *rw, int64_t size)
 {
-  struct rw_file *rwf = (struct rw_file *) rw;
+  struct rw_file *rwf = (struct rw_file *)rw;
 
   /* If the destination is an ordinary file then the original file
    * size doesn't matter.  Truncate it to the source size.  But
@@ -420,7 +420,7 @@ file_synch_read (struct rw *rw,
     if (r == 0)
       return n;
 
-    data = (char *) data + r;
+    data = (char *)data + r;
     offset += r;
     len -= r;
     n += r;
@@ -450,7 +450,7 @@ file_synch_write (struct rw *rw,
       perror (rw->name);
       exit (EXIT_FAILURE);
     }
-    data = (char *) data + r;
+    data = (char *)data + r;
     offset += r;
     len -= r;
   }

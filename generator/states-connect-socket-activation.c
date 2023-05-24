@@ -224,7 +224,7 @@ STATE_MACHINE {
 
   addr.sun_family = AF_UNIX;
   memcpy (addr.sun_path, sockpath, strlen (sockpath) + 1);
-  if (bind (s, (struct sockaddr *) &addr, sizeof addr) == -1) {
+  if (bind (s, (struct sockaddr *)&addr, sizeof addr) == -1) {
     set_error (errno, "bind: %s", sockpath);
     goto close_socket;
   }

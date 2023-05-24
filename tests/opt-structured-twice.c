@@ -60,7 +60,7 @@ main (int argc, char *argv[])
   /* Connect to the server in opt mode, without structured replies. */
   if (nbd_set_opt_mode (nbd, true) == -1 ||
       nbd_set_request_structured_replies (nbd, false) == -1 ||
-      nbd_connect_command (nbd, (char **) cmd) == -1) {
+      nbd_connect_command (nbd, (char **)cmd) == -1) {
     fprintf (stderr, "%s: %s\n", argv[0], nbd_get_error ());
     exit (EXIT_FAILURE);
   }

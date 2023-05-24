@@ -120,7 +120,7 @@ aio_submitter (struct ublksrv_aio_ctx *ctx, struct ublksrv_aio *req)
 
   switch (op) {
   case UBLK_IO_OP_READ:
-    r = nbd_aio_pread (h, (void *) iod->addr, iod->nr_sectors << 9,
+    r = nbd_aio_pread (h, (void *)iod->addr, iod->nr_sectors << 9,
                        iod->start_sector << 9, cb, 0);
     if (r == -1) {
       fprintf (stderr, "%s: %s\n", "nbdublk", nbd_get_error ());
@@ -132,7 +132,7 @@ aio_submitter (struct ublksrv_aio_ctx *ctx, struct ublksrv_aio *req)
     if (fua && can_fua)
       nbd_flags |= LIBNBD_CMD_FLAG_FUA;
 
-    r = nbd_aio_pwrite (h, (const void *) iod->addr, iod->nr_sectors << 9,
+    r = nbd_aio_pwrite (h, (const void *)iod->addr, iod->nr_sectors << 9,
                         iod->start_sector << 9, cb, nbd_flags);
     if (r == -1) {
       fprintf (stderr, "%s: %s\n", "nbdublk", nbd_get_error ());

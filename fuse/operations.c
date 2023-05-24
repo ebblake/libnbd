@@ -380,7 +380,7 @@ nbdfuse_read (const char *path, char *buf,
               struct fuse_file_info *fi)
 {
   DEBUG_OPERATION ("read", "path=%s, buf=%p, count=%zu, offset=%" PRIi64,
-                   path, buf, count, (int64_t) offset);
+                   path, buf, count, (int64_t)offset);
 
   if (!file_mode && (path[0] != '/' || strcmp (path+1, filename) != 0))
     return -ENOENT;
@@ -405,7 +405,7 @@ nbdfuse_write (const char *path, const char *buf,
                struct fuse_file_info *fi)
 {
   DEBUG_OPERATION ("write", "path=%s, buf=%p, count=%zu, offset=%" PRIi64,
-                   path, buf, count, (int64_t) offset);
+                   path, buf, count, (int64_t)offset);
 
   /* Probably shouldn't happen because of nbdfuse_open check. */
   if (readonly)
@@ -425,7 +425,7 @@ nbdfuse_write (const char *path, const char *buf,
 
   CHECK_NBD_ASYNC_ERROR (nbd_aio_pwrite (h, buf, count, offset, cb, 0));
 
-  return (int) count;
+  return (int)count;
 }
 
 static int
@@ -460,7 +460,7 @@ nbdfuse_fallocate (const char *path, int mode, off_t offset, off_t len,
 {
   DEBUG_OPERATION ("fallocate", "path=%s, mode=%d, "
                    "offset=%" PRIi64 ", len=%" PRIi64,
-                   path, mode, (int64_t) offset, (int64_t) len);
+                   path, mode, (int64_t)offset, (int64_t)len);
 
   if (readonly)
     return -EACCES;

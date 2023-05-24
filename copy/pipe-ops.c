@@ -51,7 +51,7 @@ pipe_create (const char *name, int fd)
 static void
 pipe_close (struct rw *rw)
 {
-  struct rw_pipe *rwp = (struct rw_pipe *) rw;
+  struct rw_pipe *rwp = (struct rw_pipe *)rw;
 
   if (close (rwp->fd) == -1) {
     fprintf (stderr, "%s: close: %m\n", rw->name);
@@ -96,7 +96,7 @@ static size_t
 pipe_synch_read (struct rw *rw,
                  void *data, size_t len, uint64_t offset)
 {
-  struct rw_pipe *rwp = (struct rw_pipe *) rw;
+  struct rw_pipe *rwp = (struct rw_pipe *)rw;
   ssize_t r;
 
   r = read (rwp->fd, data, len);
@@ -111,7 +111,7 @@ static void
 pipe_synch_write (struct rw *rw,
                   const void *data, size_t len, uint64_t offset)
 {
-  struct rw_pipe *rwp = (struct rw_pipe *) rw;
+  struct rw_pipe *rwp = (struct rw_pipe *)rw;
 
   while (len > 0) {
     ssize_t r = write (rwp->fd, data, len);
@@ -119,7 +119,7 @@ pipe_synch_write (struct rw *rw,
       perror (rw->name);
       exit (EXIT_FAILURE);
     }
-    data = (char *) data + r;
+    data = (char *)data + r;
     len -= r;
   }
 }

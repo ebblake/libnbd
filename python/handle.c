@@ -188,7 +188,7 @@ nbd_internal_py_aio_buffer_is_zero (PyObject *self, PyObject *args)
                      "except -1 to mean to the end of the buffer");
     goto out;
   }
-  else if ((size_t) offset + size > buf.len) {
+  else if ((size_t)offset + size > buf.len) {
     PyErr_SetString (PyExc_IndexError, "size out of range");
     goto out;
   }

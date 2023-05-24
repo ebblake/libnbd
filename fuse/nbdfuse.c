@@ -109,7 +109,7 @@ fuse_help (const char *prog)
 {
   static struct fuse_operations null_operations;
   const char *tmp_argv[] = { prog, "--help", NULL };
-  fuse_main (2, (char **) tmp_argv, &null_operations, NULL);
+  fuse_main (2, (char **)tmp_argv, &null_operations, NULL);
   exit (EXIT_SUCCESS);
 }
 
@@ -481,7 +481,7 @@ main (int argc, char *argv[])
   if (pidfile) {
     fp = fopen (pidfile, "w");
     if (fp) {
-      fprintf (fp, "%ld", (long) getpid ());
+      fprintf (fp, "%ld", (long)getpid ());
       fclose (fp);
     }
   }

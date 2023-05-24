@@ -79,7 +79,7 @@ main (int argc, char *argv[])
   }
   check (EFAULT, "nbd_connect_command: ");
 
-  if (nbd_connect_command (nbd, (char **) cmd) != -1) {
+  if (nbd_connect_command (nbd, (char **)cmd) != -1) {
     fprintf (stderr, "%s: test failed: "
              "nbd_connect_command did not reject empty argv\n",
              argv[0]);

@@ -34,7 +34,7 @@ main (int argc, const char *argv[])
    */
   char *args[] = {
     "qemu-nbd", "-f", "qcow2",
-    (char *) filename,
+    (char *)filename,
     NULL
   };
   if (nbd_connect_systemd_socket_activation (nbd,

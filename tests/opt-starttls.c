@@ -97,7 +97,7 @@ do_test (const char *server_tls, struct expected exp)
                          "--filter=tls-fallback", "pattern",
                          "size=1M", "tlsreadme=fallback", NULL };
 
-  if (nbd_connect_command (nbd, (char **) args) == -1) {
+  if (nbd_connect_command (nbd, (char **)args) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
@@ -163,7 +163,7 @@ main (int argc, char *argv[])
       exit (77);
     }
     if (nbd_set_opt_mode (nbd, true) == -1 ||
-        nbd_connect_command (nbd, (char **) args) == -1 ||
+        nbd_connect_command (nbd, (char **)args) == -1 ||
         nbd_opt_info (nbd) != -1 ||
         nbd_opt_info (nbd) != -1 ||
         nbd_aio_is_dead (nbd) == 1) {

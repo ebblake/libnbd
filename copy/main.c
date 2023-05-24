@@ -290,7 +290,7 @@ main (int argc, char *argv[])
   found1:
     connections = 1;            /* multi-conn not supported */
     src =
-      nbd_rw_create_subprocess ((const char **) &argv[optind+1], i-optind-1,
+      nbd_rw_create_subprocess ((const char **)&argv[optind+1], i-optind-1,
                                 false);
     optind = i+1;
   }
@@ -315,7 +315,7 @@ main (int argc, char *argv[])
   found2:
     connections = 1;            /* multi-conn not supported */
     dst =
-      nbd_rw_create_subprocess ((const char **) &argv[optind+1], i-optind-1,
+      nbd_rw_create_subprocess ((const char **)&argv[optind+1], i-optind-1,
                                 true);
     optind = i+1;
   }

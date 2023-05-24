@@ -102,7 +102,7 @@ handle_reply_error (struct nbd_handle *h)
   }
 
   if (len > 0)
-    debug (h, "handshake: server error message: %.*s", (int) len,
+    debug (h, "handshake: server error message: %.*s", (int)len,
            h->sbuf.or.payload.err_msg);
 
   return 0;

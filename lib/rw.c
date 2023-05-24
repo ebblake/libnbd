@@ -361,7 +361,7 @@ nbd_unlocked_aio_pwrite (struct nbd_handle *h, const void *buf,
 
   SET_CALLBACK_TO_NULL (*completion);
   return nbd_internal_command_common (h, flags, NBD_CMD_WRITE, offset, count,
-                                      ENOSPC, (void *) buf, &cb);
+                                      ENOSPC, (void *)buf, &cb);
 }
 
 int64_t

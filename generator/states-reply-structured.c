@@ -49,7 +49,7 @@ STATE_MACHINE {
    * so read the remaining part.
    */
   h->rbuf = &h->sbuf;
-  h->rbuf = (char *) h->rbuf + sizeof h->sbuf.simple_reply;
+  h->rbuf = (char *)h->rbuf + sizeof h->sbuf.simple_reply;
   h->rlen = sizeof h->sbuf.sr.structured_reply;
   h->rlen -= sizeof h->sbuf.simple_reply;
   SET_NEXT_STATE (%RECV_REMAINING);
@@ -223,7 +223,7 @@ STATE_MACHINE {
     length -= sizeof h->sbuf.sr.payload.error.error + msglen;
 
     if (msglen)
-      debug (h, "structured error server message: %.*s", (int) msglen,
+      debug (h, "structured error server message: %.*s", (int)msglen,
              h->sbuf.sr.payload.error.msg);
 
     /* Special case two specific errors; silently ignore tail for all others */
@@ -286,7 +286,7 @@ STATE_MACHINE {
          * without setting errno, then use the server's error below.
          */
         if (CALL_CALLBACK (cmd->cb.fn.chunk,
-                           (char *) cmd->data + (offset - cmd->offset),
+                           (char *)cmd->data + (offset - cmd->offset),
                            0, offset, LIBNBD_READ_ERROR,
                            &scratch) == -1)
           if (cmd->error == 0)
@@ -337,7 +337,7 @@ STATE_MACHINE {
     offset -= cmd->offset;
 
     /* Set up to receive the data directly to the user buffer. */
-    h->rbuf = (char *) cmd->data + offset;
+    h->rbuf = (char *)cmd->data + offset;
     h->rlen = length;
     SET_NEXT_STATE (%RECV_OFFSET_DATA_DATA);
   }
@@ -363,7 +363,7 @@ STATE_MACHINE {
       int error = cmd->error;
 
       if (CALL_CALLBACK (cmd->cb.fn.chunk,
-                         (char *) cmd->data + (offset - cmd->offset),
+                         (char *)cmd->data + (offset - cmd->offset),
                          length - sizeof offset, offset,
                          LIBNBD_READ_DATA, &error) == -1)
         if (cmd->error == 0)
@@ -408,12 +408,12 @@ STATE_MACHINE {
      * them as an extension, and this works even when length == 0.
      */
     if (!cmd->initialized)
-      memset ((char *) cmd->data + offset, 0, length);
+      memset ((char *)cmd->data + offset, 0, length);
     if (CALLBACK_IS_NOT_NULL (cmd->cb.fn.chunk)) {
       int error = cmd->error;
 
       if (CALL_CALLBACK (cmd->cb.fn.chunk,
-                         (char *) cmd->data + offset, length,
+                         (char *)cmd->data + offset, length,
                          cmd->offset + offset,
                          LIBNBD_READ_HOLE, &error) == -1)
         if (cmd->error == 0)

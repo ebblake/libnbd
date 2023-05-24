@@ -82,10 +82,10 @@ test_int64_vector (void)
   assert (v.ptr[1] == 2);
 
   tmp = 10;
-  p = int64_vector_search (&v, &tmp, (void*) compare);
+  p = int64_vector_search (&v, &tmp, (void *)compare);
   assert (p == NULL);
   tmp = 8;
-  p = int64_vector_search (&v, &tmp, (void*) compare);
+  p = int64_vector_search (&v, &tmp, (void *)compare);
   assert (p == &v.ptr[7]);
 
   free (v.ptr);

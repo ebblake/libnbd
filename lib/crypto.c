@@ -307,7 +307,7 @@ lookup_key (const char *pskfile, const char *username,
     if (r > ulen+1 &&
         strncmp (line, username, ulen) == 0 &&
         line[ulen] == ':') {
-      key->data = (unsigned char *) strdup (&line[ulen+1]);
+      key->data = (unsigned char *)strdup (&line[ulen+1]);
       if (key->data == NULL) {
         set_error (errno, "strdup");
         goto error;
@@ -712,7 +712,7 @@ nbd_internal_crypto_handshake (struct nbd_handle *h)
   in = gnutls_handshake_get_last_in (session);
   out = gnutls_handshake_get_last_out (session);
   set_error (0, "gnutls_handshake: %s (%d/%d)",
-             gnutls_strerror (err), (int) in, (int) out);
+             gnutls_strerror (err), (int)in, (int)out);
   return -1;
 }
 
@@ -742,7 +742,7 @@ nbd_internal_crypto_debug_tls_enabled (struct nbd_handle *h)
     case GNUTLS_KTLS_SEND: ktls_status = "enabled send only"; break;
     case GNUTLS_KTLS_DUPLEX: ktls_status = "enabled"; break;
     default:
-      if ((int) ktls_enabled == 0)
+      if ((int)ktls_enabled == 0)
         ktls_status = "disabled";
       else
         ktls_status = "unknown";

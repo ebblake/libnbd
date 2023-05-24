@@ -370,7 +370,7 @@ let print_python_binding name { args; optargs; ret; may_set_error } =
       | SizeT n -> "n", sprintf "&%s" n, sprintf "(size_t)%s" n
       | SockAddrAndLen (n, _) ->
          "O", sprintf "&%s" n,
-         sprintf "(struct sockaddr *) &%s_sa, %s_len" n n
+         sprintf "(struct sockaddr *)&%s_sa, %s_len" n n
       | String n -> "s", sprintf "&%s" n, n
       | StringList n -> "O", sprintf "&py_%s" n, n
       | UInt n | UIntPtr n -> "I", sprintf "&%s" n, n

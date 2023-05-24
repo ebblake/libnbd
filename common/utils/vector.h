@@ -173,7 +173,7 @@
   name##_sort (name *v,                                                 \
                int (*compare) (const type *p1, const type *p2))         \
   {                                                                     \
-    qsort (v->ptr, v->len, sizeof (type), (void *) compare);            \
+    qsort (v->ptr, v->len, sizeof (type), (void *)compare);             \
   }                                                                     \
                                                                         \
   /* Search for an exactly matching element in the vector using a       \
@@ -184,7 +184,7 @@
                  int (*compare) (const void *key, const type *v))       \
   {                                                                     \
     return bsearch (key, v->ptr, v->len, sizeof (type),                 \
-                    (void *) compare);                                  \
+                    (void *)compare);                                   \
   }                                                                     \
                                                                         \
   /* Make a new vector with the same elements. */                       \

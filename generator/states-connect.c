@@ -84,7 +84,7 @@ STATE_MACHINE {
   disable_nagle (fd);
   disable_sigpipe (fd);
 
-  r = connect (fd, (struct sockaddr *) &h->connaddr, h->connaddrlen);
+  r = connect (fd, (struct sockaddr *)&h->connaddr, h->connaddrlen);
   if (r == 0 || (r == -1 && errno == EINPROGRESS))
     return 0;
   assert (r == -1);

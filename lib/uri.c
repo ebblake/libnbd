@@ -376,7 +376,7 @@ nbd_unlocked_aio_connect_uri (struct nbd_handle *h, const char *raw_uri)
      * uri->port > 0.  This prevents us from using certain very large
      * port numbers, but that's not an issue that matters in practice.
      */
-    svm_port = uri->port > 0 ? (uint32_t) uri->port : 10809;
+    svm_port = uri->port > 0 ? (uint32_t)uri->port : 10809;
     if (nbd_unlocked_aio_connect_vsock (h, cid, svm_port) == -1)
       goto cleanup;
 
@@ -451,7 +451,7 @@ nbd_unlocked_get_uri (struct nbd_handle *h)
       char serv[NI_MAXSERV];
 
       uri.scheme = using_tls ? "nbds" : "nbd";
-      err = getnameinfo ((struct sockaddr *) &h->connaddr, h->connaddrlen,
+      err = getnameinfo ((struct sockaddr *)&h->connaddr, h->connaddrlen,
                          host, sizeof host, serv, sizeof serv,
                          NI_NUMERICHOST | NI_NUMERICSERV);
       if (err != 0) {
@@ -471,7 +471,7 @@ nbd_unlocked_get_uri (struct nbd_handle *h)
     }
 
     case AF_UNIX: {
-      struct sockaddr_un *sun = (struct sockaddr_un *) &h->connaddr;
+      struct sockaddr_un *sun = (struct sockaddr_un *)&h->connaddr;
 
       if (sun->sun_path[0] == '\0') {
         /* Unix domain sockets in the abstract namespace are in theory
@@ -495,7 +495,7 @@ nbd_unlocked_get_uri (struct nbd_handle *h)
 
 #if HAVE_STRUCT_SOCKADDR_VM
     case AF_VSOCK: {
-      struct sockaddr_vm *svm = (struct sockaddr_vm *) &h->connaddr;
+      struct sockaddr_vm *svm = (struct sockaddr_vm *)&h->connaddr;
 
       uri.scheme = using_tls ? "nbds+vsock" : "nbd+vsock";
       if (asprintf (&server, "%u:%u", svm->svm_cid, svm->svm_port) == -1) {
@@ -543,7 +543,7 @@ nbd_unlocked_get_uri (struct nbd_handle *h)
   uri.query_raw = query_params;
 
   /* Construct the final URI and return it. */
-  ret = (char *) xmlSaveUri (&uri);
+  ret = (char *)xmlSaveUri (&uri);
   if (ret == NULL)
     set_error (errno, "xmlSaveUri failed");
  out:

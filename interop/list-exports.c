@@ -75,7 +75,7 @@ append (void *opaque, const char *name, const char *description)
 static int
 compare_actuals (const void *vp1, const void *vp2)
 {
-  return strcmp (* (char * const *) vp1, * (char * const *) vp2);
+  return strcmp (*(char * const *)vp1, *(char * const *)vp2);
 }
 
 static void

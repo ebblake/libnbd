@@ -398,7 +398,7 @@ do_dump (void)
       /* Print the ASCII codes. */
       printf ("%s", pipe);
       for (j = i; j < MIN (i+16, n); ++j) {
-        char c = (char) buffer[j];
+        char c = (char)buffer[j];
         if (isalnum (c)) {
           ansi_colour (ANSI_FG_BRIGHT_RED, stdout);
           printf ("%c", c);

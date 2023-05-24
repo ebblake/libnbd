@@ -65,7 +65,7 @@ main (int argc, char *argv[])
   }
 
   /* Connect to a server. */
-  if (nbd_connect_command (nbd, (char **) cmd) == -1) {
+  if (nbd_connect_command (nbd, (char **)cmd) == -1) {
     fprintf (stderr, "%s: %s\n", argv[0], nbd_get_error ());
     exit (EXIT_FAILURE);
   }

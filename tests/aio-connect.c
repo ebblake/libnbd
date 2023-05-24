@@ -85,7 +85,7 @@ main (int argc, char *argv[])
   addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
   addr.sin_port = htons (port);
 
-  if (nbd_aio_connect (nbd, (struct sockaddr *) &addr, sizeof addr) == -1) {
+  if (nbd_aio_connect (nbd, (struct sockaddr *)&addr, sizeof addr) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }

@@ -53,7 +53,7 @@ nbd_internal_py_get_string_list (PyObject *obj)
                      "get_string_list: PyList_Size failure");
     return NULL;
   }
-  len = (size_t) slen;
+  len = (size_t)slen;
   r = malloc (sizeof (char *) * (len+1));
   if (r == NULL) {
     PyErr_NoMemory ();

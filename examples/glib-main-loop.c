@@ -79,7 +79,7 @@ events_from_nbd (struct nbd_handle *nbd)
 static gboolean
 prepare (GSource *sp, gint *timeout_)
 {
-  struct NBDSource *source = (struct NBDSource *) sp;
+  struct NBDSource *source = (struct NBDSource *)sp;
   int new_fd;
   int events;
 
@@ -89,13 +89,13 @@ prepare (GSource *sp, gint *timeout_)
   new_fd = nbd_aio_get_fd (source->nbd);
   if (source->fd != new_fd) {
     if (source->tag != NULL) {
-      g_source_remove_unix_fd ((GSource *) source, source->tag);
+      g_source_remove_unix_fd ((GSource *)source, source->tag);
       source->fd = -1;
       source->tag = NULL;
     }
     if (new_fd >= 0) {
       source->fd = new_fd;
-      source->tag = g_source_add_unix_fd ((GSource *) source, new_fd, 0);
+      source->tag = g_source_add_unix_fd ((GSource *)source, new_fd, 0);
     }
   }
 
@@ -103,7 +103,7 @@ prepare (GSource *sp, gint *timeout_)
     return FALSE;
 
   events = events_from_nbd (source->nbd);
-  g_source_modify_unix_fd ((GSource *) source, source->tag, events);
+  g_source_modify_unix_fd ((GSource *)source, source->tag, events);
   *timeout_ = -1;
 
   DEBUG (source, "prepare: events = 0x%x%s%s",
@@ -125,14 +125,14 @@ prepare (GSource *sp, gint *timeout_)
 static gboolean
 check (GSource *sp)
 {
-  struct NBDSource *source = (struct NBDSource *) sp;
+  struct NBDSource *source = (struct NBDSource *)sp;
   unsigned dir;
   int revents;
 
   if (!source->tag)
     return FALSE;
 
-  revents = g_source_query_unix_fd ((GSource *) source, source->tag);
+  revents = g_source_query_unix_fd ((GSource *)source, source->tag);
   dir = nbd_aio_get_direction (source->nbd);
 
   DEBUG (source, "check: direction = 0x%x%s%s, revents = 0x%x%s%s",
@@ -156,11 +156,11 @@ dispatch (GSource *sp,
           GSourceFunc callback,
           gpointer user_data)
 {
-  struct NBDSource *source = (struct NBDSource *) sp;
+  struct NBDSource *source = (struct NBDSource *)sp;
   int revents;
   int r;
 
-  revents = g_source_query_unix_fd ((GSource *) source, source->tag);
+  revents = g_source_query_unix_fd ((GSource *)source, source->tag);
 
   DEBUG (source, "dispatch: revents = 0x%x%s%s",
          revents,
@@ -184,7 +184,7 @@ dispatch (GSource *sp,
 static void
 finalize (GSource *sp)
 {
-  struct NBDSource *source = (struct NBDSource *) sp;
+  struct NBDSource *source = (struct NBDSource *)sp;
 
   DEBUG (source, "finalize");
 
@@ -211,7 +211,7 @@ create_libnbd_gsource (struct nbd_handle *nbd)
   struct NBDSource *source;
 
   source =
-    (struct NBDSource *) g_source_new (&nbd_source_funcs, sizeof *source);
+    (struct NBDSource *)g_source_new (&nbd_source_funcs, sizeof *source);
   source->nbd = nbd;
   source->debug = nbd_get_debug (nbd);
   source->fd = -1;
@@ -297,19 +297,19 @@ main (int argc, char *argv[])
   gssrc = create_libnbd_gsource (src);
   gsdest = create_libnbd_gsource (dest);
   loopctx = g_main_loop_get_context (loop);
-  g_source_attach ((GSource *) gssrc, loopctx);
-  g_source_attach ((GSource *) gsdest, loopctx);
+  g_source_attach ((GSource *)gssrc, loopctx);
+  g_source_attach ((GSource *)gsdest, loopctx);
 
   /* Make sure we get called back when each handle connects. */
   gssrc->connected_callback = connected;
   gsdest->connected_callback = connected;
 
   /* Asynchronously start each handle connecting. */
-  if (nbd_aio_connect_command (src, (char **) src_args) == -1) {
+  if (nbd_aio_connect_command (src, (char **)src_args) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
-  if (nbd_aio_connect_command (dest, (char **) dest_args) == -1) {
+  if (nbd_aio_connect_command (dest, (char **)dest_args) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
@@ -482,11 +482,11 @@ finished_write (void *vp, int *error)
    */
   if (finished && nr_buffers == 0) {
     DEBUG (gsdest, "finished_write: all finished");
-    g_source_remove (g_source_get_id ((GSource *) gssrc));
-    g_source_unref ((GSource *) gssrc);
+    g_source_remove (g_source_get_id ((GSource *)gssrc));
+    g_source_unref ((GSource *)gssrc);
     gssrc = NULL;
-    g_source_remove (g_source_get_id ((GSource *) gsdest));
-    g_source_unref ((GSource *) gsdest);
+    g_source_remove (g_source_get_id ((GSource *)gsdest));
+    g_source_unref ((GSource *)gsdest);
     gsdest = NULL;
     g_main_loop_quit (loop);
   }

@@ -710,12 +710,12 @@ let print_ocaml_binding (name, { args; optargs; ret }) =
        pr "  size_t %s = Int_val (%sv);\n" n n
     | SockAddrAndLen (n, len) ->
        pr "  struct sockaddr_storage %s_storage;\n" n;
-       pr "  struct sockaddr *%s = (struct sockaddr *) &%s_storage;\n" n n;
+       pr "  struct sockaddr *%s = (struct sockaddr *)&%s_storage;\n" n n;
        pr "  socklen_t %s;\n" len;
        pr "  nbd_internal_unix_sockaddr_to_sa (%sv, &%s_storage, &%s);\n"
          n n len
     | StringList n ->
-       pr "  char **%s = (char **) nbd_internal_ocaml_string_list (%sv);\n" n n
+       pr "  char **%s = (char **)nbd_internal_ocaml_string_list (%sv);\n" n n
     | UInt n | UIntPtr n ->
        pr "  unsigned %s = Int_val (%sv);\n" n n
     | UInt32 n ->

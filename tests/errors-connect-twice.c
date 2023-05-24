@@ -69,11 +69,11 @@ main (int argc, char *argv[])
   }
 
   /* Connect to a working server, then try to connect again. */
-  if (nbd_connect_command (nbd, (char **) cmd) == -1) {
+  if (nbd_connect_command (nbd, (char **)cmd) == -1) {
     fprintf (stderr, "%s: %s\n", argv[0], nbd_get_error ());
     exit (EXIT_FAILURE);
   }
-  if (nbd_connect_command (nbd, (char **) cmd) != -1) {
+  if (nbd_connect_command (nbd, (char **)cmd) != -1) {
     fprintf (stderr, "%s: test failed: "
              "nbd_connect_command did not reject repeat attempt\n",
              argv[0]);

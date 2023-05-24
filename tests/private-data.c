@@ -62,8 +62,8 @@ main (int argc, char *argv[])
   assert (nbd_get_private_data (nbd1) == 43);
 
   /* Check that (in C) we can store and retrieve a pointer. */
-  nbd_set_private_data (nbd1, (uintptr_t) &nbd_close);
-  assert (nbd_get_private_data (nbd1) == (uintptr_t) &nbd_close);
+  nbd_set_private_data (nbd1, (uintptr_t)&nbd_close);
+  assert (nbd_get_private_data (nbd1) == (uintptr_t)&nbd_close);
 
   nbd_close (nbd2);
   nbd_close (nbd1);
