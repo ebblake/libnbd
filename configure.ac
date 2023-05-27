@@ -491,6 +491,7 @@ AS_IF([test "x$OCAMLC" != "xno" && test "x$OCAMLFIND" != "xno" && \
        test "x$enable_ocaml" = "xyes"],[
     AC_MSG_CHECKING([for caml_unix_get_sockaddr])
     cat >conftest.c <<'EOF'
+#include <caml/mlvalues.h>
 #include <caml/socketaddr.h>
 int main () { char *p = (void *)caml_unix_get_sockaddr; return 0; }
 EOF
