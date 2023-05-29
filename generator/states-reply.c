@@ -138,7 +138,7 @@ STATE_MACHINE {
    * handle (our cookie) is stored at the same offset.
    */
   h->chunks_received++;
-  cookie = be64toh (h->sbuf.simple_reply.handle);
+  cookie = be64toh (h->sbuf.simple_reply.cookie);
   /* Find the command amongst the commands in flight. If the server sends
    * a reply for an unknown cookie, FINISH will diagnose that later.
    */
@@ -157,7 +157,7 @@ STATE_MACHINE {
   /* NB: This works for both simple and structured replies because the
    * handle (our cookie) is stored at the same offset.
    */
-  cookie = be64toh (h->sbuf.simple_reply.handle);
+  cookie = be64toh (h->sbuf.simple_reply.cookie);
   /* Find the command amongst the commands in flight. */
   for (cmd = h->cmds_in_flight, prev_cmd = NULL;
        cmd != NULL;

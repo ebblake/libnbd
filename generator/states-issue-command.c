@@ -44,7 +44,7 @@ STATE_MACHINE {
   h->request.magic = htobe32 (NBD_REQUEST_MAGIC);
   h->request.flags = htobe16 (cmd->flags);
   h->request.type = htobe16 (cmd->type);
-  h->request.handle = htobe64 (cmd->cookie);
+  h->request.cookie = htobe64 (cmd->cookie);
   h->request.offset = htobe64 (cmd->offset);
   h->request.count = htobe32 (cmd->count);
   h->chunks_sent++;
@@ -74,7 +74,7 @@ STATE_MACHINE {
 
   assert (h->cmds_to_issue != NULL);
   cmd = h->cmds_to_issue;
-  assert (cmd->cookie == be64toh (h->request.handle));
+  assert (cmd->cookie == be64toh (h->request.cookie));
   if (cmd->type == NBD_CMD_WRITE) {
     h->wbuf = cmd->data;
     h->wlen = cmd->count;
@@ -120,7 +120,7 @@ STATE_MACHINE {
   assert (!h->wlen);
   assert (h->cmds_to_issue != NULL);
   cmd = h->cmds_to_issue;
-  assert (cmd->cookie == be64toh (h->request.handle));
+  assert (cmd->cookie == be64toh (h->request.cookie));
   h->cmds_to_issue = cmd->next;
   if (h->cmds_to_issue_tail == cmd)
     h->cmds_to_issue_tail = NULL;
