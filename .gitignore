@@ -22,6 +22,7 @@
 /local*
 
 .deps
+.dirstamp
 .libs
 Makefile
 Makefile.in
