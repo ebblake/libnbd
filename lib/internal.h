@@ -212,6 +212,7 @@ struct nbd_handle {
    * and commands.
    */
   union {
+    uint64_t align_; /* Start sbuf on an 8-byte alignment where useful */
     struct nbd_old_handshake old_handshake;
     struct nbd_new_handshake new_handshake;
     struct nbd_new_option option;
@@ -240,6 +241,7 @@ struct nbd_handle {
     struct {
       struct nbd_structured_reply structured_reply;
       union {
+        uint64_t align_; /* Start sr.payload on an 8-byte alignment */
         struct nbd_structured_reply_offset_data offset_data;
         struct nbd_structured_reply_offset_hole offset_hole;
         struct {
