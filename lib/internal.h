@@ -234,7 +234,7 @@ struct nbd_handle {
         }  __attribute__ ((packed)) context;
         char err_msg[NBD_MAX_STRING];
       } payload;
-    }  __attribute__ ((packed)) or;
+    } or;
     struct nbd_export_name_option_reply export_name_reply;
     struct nbd_simple_reply simple_reply;
     struct {
@@ -248,7 +248,7 @@ struct nbd_handle {
           uint64_t offset; /* Only used for NBD_REPLY_TYPE_ERROR_OFFSET */
         } __attribute__ ((packed)) error;
       } payload;
-    }  __attribute__ ((packed)) sr;
+    } sr;
     uint16_t gflags;
     uint32_t cflags;
     uint32_t len;
