@@ -221,17 +221,17 @@ struct nbd_handle {
         struct {
           struct nbd_fixed_new_option_reply_server server;
           char str[NBD_MAX_STRING * 2 + 1]; /* name, description, NUL */
-        } __attribute__ ((packed)) server;
+        } NBD_ATTRIBUTE_PACKED server;
         struct nbd_fixed_new_option_reply_info_export export;
         struct nbd_fixed_new_option_reply_info_block_size block_size;
         struct {
           struct nbd_fixed_new_option_reply_info_name_or_desc info;
           char str[NBD_MAX_STRING];
-        } __attribute__ ((packed)) name_desc;
+        } NBD_ATTRIBUTE_PACKED name_desc;
         struct {
           struct nbd_fixed_new_option_reply_meta_context context;
           char str[NBD_MAX_STRING];
-        }  __attribute__ ((packed)) context;
+        } NBD_ATTRIBUTE_PACKED context;
         char err_msg[NBD_MAX_STRING];
       } payload;
     } or;
@@ -246,7 +246,7 @@ struct nbd_handle {
           struct nbd_structured_reply_error error;
           char msg[NBD_MAX_STRING]; /* Common to all error types */
           uint64_t offset; /* Only used for NBD_REPLY_TYPE_ERROR_OFFSET */
-        } __attribute__ ((packed)) error;
+        } NBD_ATTRIBUTE_PACKED error;
       } payload;
     } sr;
     uint16_t gflags;
