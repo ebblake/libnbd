@@ -115,17 +115,21 @@ check_PROGRAMS = \
 	$(NULL)
 
 test_fork_safe_assert_SOURCES = \
-	$(top_srcdir)/common/utils/vector.c \
 	errors.c \
 	test-fork-safe-assert.c \
 	utils.c \
 	$(NULL)
-test_fork_safe_assert_LDADD = $(PTHREAD_LIBS)
+test_fork_safe_assert_LDADD = \
+	$(top_builddir)/common/utils/libutils.la \
+	$(PTHREAD_LIBS) \
+	$(NULL)
 
 test_fork_safe_execvpe_SOURCES = \
-	$(top_srcdir)/common/utils/vector.c \
 	errors.c \
 	test-fork-safe-execvpe.c \
 	utils.c \
 	$(NULL)
-test_fork_safe_execvpe_LDADD = $(PTHREAD_LIBS)
+test_fork_safe_execvpe_LDADD = \
+	$(top_builddir)/common/utils/libutils.la \
+	$(PTHREAD_LIBS) \
+	$(NULL)
