@@ -45,7 +45,7 @@ let () =
       | exn -> failwith ("unexpected exception: " ^ Printexc.to_string exn)
   );
 
-  Gc.compact ();
+  Gc.full_major ();
 
   (* Check the messages so we know the handle was closed. *)
   assert (List.length (List.filter closing_handle !messages) = 1)
