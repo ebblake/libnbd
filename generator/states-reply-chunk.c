@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/* State machine for parsing structured replies from the server. */
+/* State machine for parsing structured reply chunk payloads from the server. */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -44,7 +44,7 @@ structured_reply_in_bounds (uint64_t offset, uint32_t length,
 }
 
 STATE_MACHINE {
- REPLY.STRUCTURED_REPLY.START:
+ REPLY.CHUNK_REPLY.START:
   struct command *cmd = h->reply_cmd;
   uint16_t flags, type;
   uint32_t length;
@@ -144,7 +144,7 @@ STATE_MACHINE {
   SET_NEXT_STATE (%RESYNC);
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_ERROR:
+ REPLY.CHUNK_REPLY.RECV_ERROR:
   struct command *cmd = h->reply_cmd;
   uint32_t length, msglen, error;
 
@@ -183,7 +183,7 @@ STATE_MACHINE {
   SET_NEXT_STATE (%RESYNC);
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_ERROR_MESSAGE:
+ REPLY.CHUNK_REPLY.RECV_ERROR_MESSAGE:
   uint32_t length, msglen;
   uint16_t type;
 
@@ -225,7 +225,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_ERROR_TAIL:
+ REPLY.CHUNK_REPLY.RECV_ERROR_TAIL:
   struct command *cmd = h->reply_cmd;
   uint32_t error;
   uint16_t type;
@@ -282,7 +282,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_OFFSET_DATA:
+ REPLY.CHUNK_REPLY.RECV_OFFSET_DATA:
   struct command *cmd = h->reply_cmd;
   uint64_t offset;
   uint32_t length;
@@ -321,7 +321,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_OFFSET_DATA_DATA:
+ REPLY.CHUNK_REPLY.RECV_OFFSET_DATA_DATA:
   struct command *cmd = h->reply_cmd;
   uint64_t offset;
   uint32_t length;
@@ -352,7 +352,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_OFFSET_HOLE:
+ REPLY.CHUNK_REPLY.RECV_OFFSET_HOLE:
   struct command *cmd = h->reply_cmd;
   uint64_t offset;
   uint32_t length;
@@ -402,7 +402,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RECV_BS_ENTRIES:
+ REPLY.CHUNK_REPLY.RECV_BS_ENTRIES:
   struct command *cmd = h->reply_cmd;
   uint32_t length;
   size_t i;
@@ -456,7 +456,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.RESYNC:
+ REPLY.CHUNK_REPLY.RESYNC:
   struct command *cmd = h->reply_cmd;
   uint16_t type;
   uint32_t length;
@@ -490,7 +490,7 @@ STATE_MACHINE {
   }
   return 0;
 
- REPLY.STRUCTURED_REPLY.FINISH:
+ REPLY.CHUNK_REPLY.FINISH:
   uint16_t flags;
 
   flags = be16toh (h->sbuf.sr.structured_reply.flags);

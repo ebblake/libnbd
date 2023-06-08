@@ -782,7 +782,7 @@ and reply_state_machine = [
   };
 
   Group ("SIMPLE_REPLY", simple_reply_state_machine);
-  Group ("STRUCTURED_REPLY", structured_reply_state_machine);
+  Group ("CHUNK_REPLY", chunk_reply_state_machine);
 
   State {
     default_state with
@@ -812,76 +812,76 @@ and simple_reply_state_machine = [
 ]
 
 (* Receiving a structured reply payload from the server.
- * Implementation: generator/states-reply-structured.c
+ * Implementation: generator/states-reply-chunk.c
  *)
-and structured_reply_state_machine = [
+and chunk_reply_state_machine = [
   State {
     default_state with
     name = "START";
-    comment = "Start parsing a structured reply payload from the server";
+    comment = "Start parsing a chunk reply payload from the server";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_ERROR";
-    comment = "Receive a structured reply error header";
+    comment = "Receive a chunk reply error header";
     external_events = []
   };
 
   State {
     default_state with
     name = "RECV_ERROR_MESSAGE";
-    comment = "Receive a structured reply error message";
+    comment = "Receive a chunk reply error message";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_ERROR_TAIL";
-    comment = "Receive a structured reply error tail";
+    comment = "Receive a chunk reply error tail";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_OFFSET_DATA";
-    comment = "Receive a structured reply offset-data header";
+    comment = "Receive a chunk reply offset-data header";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_OFFSET_DATA_DATA";
-    comment = "Receive a structured reply offset-data block of data";
+    comment = "Receive a chunk reply offset-data block of data";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_OFFSET_HOLE";
-    comment = "Receive a structured reply offset-hole header";
+    comment = "Receive a chunk reply offset-hole header";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RECV_BS_ENTRIES";
-    comment = "Receive a structured reply block-status payload";
+    comment = "Receive a chunk reply block-status payload";
     external_events = [];
   };
 
   State {
     default_state with
     name = "RESYNC";
-    comment = "Ignore payload of an unexpected structured reply";
+    comment = "Ignore payload of an unexpected chunk reply";
     external_events = [];
   };
 
   State {
     default_state with
     name = "FINISH";
-    comment = "Finish receiving a structured reply";
+    comment = "Finish receiving a chunk reply";
     external_events = [];
   };
 ]

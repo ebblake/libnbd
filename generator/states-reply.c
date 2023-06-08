@@ -178,7 +178,7 @@ STATE_MACHINE {
     save_reply_state (h);
     SET_NEXT_STATE (%.READY);
     return 0;
-  case 0: SET_NEXT_STATE (%STRUCTURED_REPLY.START);
+  case 0: SET_NEXT_STATE (%CHUNK_REPLY.START);
   }
   return 0;
 

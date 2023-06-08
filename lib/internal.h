@@ -242,10 +242,10 @@ struct nbd_handle {
       struct nbd_structured_reply structured_reply;
       union {
         uint64_t align_; /* Start sr.payload on an 8-byte alignment */
-        struct nbd_structured_reply_offset_data offset_data;
-        struct nbd_structured_reply_offset_hole offset_hole;
+        struct nbd_chunk_offset_data offset_data;
+        struct nbd_chunk_offset_hole offset_hole;
         struct {
-          struct nbd_structured_reply_error error;
+          struct nbd_chunk_error error;
           char msg[NBD_MAX_STRING]; /* Common to all error types */
           uint64_t offset; /* Only used for NBD_REPLY_TYPE_ERROR_OFFSET */
         } NBD_ATTRIBUTE_PACKED error;
