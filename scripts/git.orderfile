@@ -39,6 +39,18 @@ common/*/*.h
 
 # Generator files.
 generator/*.mli
+generator/API.ml
+generator/state_machine.ml
+generator/states.c
+generator/states-connect.c
+generator/states-connect-*.c
+generator/states-magic.c
+generator/states-oldstyle.c
+generator/states-newstyle.c
+generator/states-newstyle-*.c
+generator/states-issue*.c
+generator/states-reply.c
+generator/states-reply-*.c
 generator/*
 
 # Source files.
