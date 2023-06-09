@@ -769,8 +769,15 @@ and reply_state_machine = [
 
   State {
     default_state with
-    name = "CHECK_SIMPLE_OR_STRUCTURED_REPLY";
-    comment = "Check if the reply is a simple or structured reply";
+    name = "CHECK_REPLY_MAGIC";
+    comment = "Check if the reply has expected magic";
+    external_events = [];
+  };
+
+  State {
+    default_state with
+    name = "RECV_STRUCTURED_REMAINING";
+    comment = "Receiving the remaining part of a structured reply header";
     external_events = [];
   };
 
@@ -804,28 +811,14 @@ and simple_reply_state_machine = [
   };
 ]
 
-(* Receiving a structured reply from the server.
+(* Receiving a structured reply payload from the server.
  * Implementation: generator/states-reply-structured.c
  *)
 and structured_reply_state_machine = [
   State {
     default_state with
     name = "START";
-    comment = "Prepare to receive the remaining part of a structured reply";
-    external_events = [];
-  };
-
-  State {
-    default_state with
-    name = "RECV_REMAINING";
-    comment = "Receiving the remaining part of a structured reply";
-    external_events = [];
-  };
-
-  State {
-    default_state with
-    name = "CHECK";
-    comment = "Parse a structured reply from the server";
+    comment = "Start parsing a structured reply payload from the server";
     external_events = [];
   };
 

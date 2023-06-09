@@ -64,11 +64,11 @@ STATE_MACHINE {
   ssize_t r;
 
   /* We read all replies initially as if they are simple replies, but
-   * check the magic in CHECK_SIMPLE_OR_STRUCTURED_REPLY below.  This
-   * works because the structured_reply header is larger, and because
-   * the last member of a simple reply, cookie, is coincident between
-   * the two structs (an intentional design decision in the NBD spec
-   * when structured replies were added).
+   * check the magic in CHECK_REPLY_MAGIC below.  This works because
+   * the structured_reply header is larger, and because the last
+   * member of a simple reply, cookie, is coincident between the two
+   * structs (an intentional design decision in the NBD spec when
+   * structured replies were added).
    */
   STATIC_ASSERT (offsetof (struct nbd_handle, sbuf.sr.structured_reply.cookie)
                  == offsetof (struct nbd_handle, sbuf.simple_reply.cookie) &&
@@ -115,11 +115,11 @@ STATE_MACHINE {
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
   case 1: SET_NEXT_STATE (%.READY); return 0;
-  case 0: SET_NEXT_STATE (%CHECK_SIMPLE_OR_STRUCTURED_REPLY);
+  case 0: SET_NEXT_STATE (%CHECK_REPLY_MAGIC);
   }
   return 0;
 
- REPLY.CHECK_SIMPLE_OR_STRUCTURED_REPLY:
+ REPLY.CHECK_REPLY_MAGIC:
   struct command *cmd;
   uint32_t magic;
   uint64_t cookie;
@@ -129,7 +129,18 @@ STATE_MACHINE {
     SET_NEXT_STATE (%SIMPLE_REPLY.START);
   }
   else if (magic == NBD_STRUCTURED_REPLY_MAGIC) {
-    SET_NEXT_STATE (%STRUCTURED_REPLY.START);
+    /* We've only read the bytes that fill simple_reply.  The
+     * structured_reply is longer, so prepare to read the remaining
+     * bytes.  We depend on the memory aliasing in union sbuf to
+     * overlay the two reply types.
+     */
+    STATIC_ASSERT (sizeof h->sbuf.simple_reply ==
+                   offsetof (struct nbd_structured_reply, length),
+                   simple_structured_overlap);
+    assert (h->rbuf == (char *)&h->sbuf + sizeof h->sbuf.simple_reply);
+    h->rlen = sizeof h->sbuf.sr.structured_reply;
+    h->rlen -= sizeof h->sbuf.simple_reply;
+    SET_NEXT_STATE (%RECV_STRUCTURED_REMAINING);
   }
   else {
     /* We've probably lost synchronization. */
@@ -143,8 +154,9 @@ STATE_MACHINE {
     return 0;
   }
 
-  /* NB: This works for both simple and structured replies because the
-   * handle (our cookie) is stored at the same offset.  See the
+  /* NB: This works for both simple and structured replies, even
+   * though we haven't finished reading the structured header yet,
+   * because the cookie is stored at the same offset.  See the
    * STATIC_ASSERT above in state REPLY.START that confirmed this.
    */
   h->chunks_received++;
@@ -157,6 +169,17 @@ STATE_MACHINE {
       break;
   }
   h->reply_cmd = cmd;
+  return 0;
+
+ REPLY.RECV_STRUCTURED_REMAINING:
+  switch (recv_into_rbuf (h)) {
+  case -1: SET_NEXT_STATE (%.DEAD); return 0;
+  case 1:
+    save_reply_state (h);
+    SET_NEXT_STATE (%.READY);
+    return 0;
+  case 0: SET_NEXT_STATE (%STRUCTURED_REPLY.START);
+  }
   return 0;
 
  REPLY.FINISH_COMMAND:
