@@ -17,6 +17,7 @@
  */
 
 #include <assert.h>
+#include <stddef.h>
 
 /* State machine for receiving reply messages from the server.
  *
@@ -63,9 +64,17 @@ STATE_MACHINE {
   ssize_t r;
 
   /* We read all replies initially as if they are simple replies, but
-   * check the magic in CHECK_SIMPLE_OR_STRUCTURED_REPLY below.
-   * This works because the structured_reply header is larger.
+   * check the magic in CHECK_SIMPLE_OR_STRUCTURED_REPLY below.  This
+   * works because the structured_reply header is larger, and because
+   * the last member of a simple reply, cookie, is coincident between
+   * the two structs (an intentional design decision in the NBD spec
+   * when structured replies were added).
    */
+  STATIC_ASSERT (offsetof (struct nbd_handle, sbuf.sr.structured_reply.cookie)
+                 == offsetof (struct nbd_handle, sbuf.simple_reply.cookie) &&
+                 sizeof ((struct nbd_simple_reply *)NULL)->cookie ==
+                 sizeof ((struct nbd_structured_reply *)NULL)->cookie,
+                 cookie_aliasing);
   assert (h->reply_cmd == NULL);
   assert (h->rlen == 0);
 
@@ -135,7 +144,8 @@ STATE_MACHINE {
   }
 
   /* NB: This works for both simple and structured replies because the
-   * handle (our cookie) is stored at the same offset.
+   * handle (our cookie) is stored at the same offset.  See the
+   * STATIC_ASSERT above in state REPLY.START that confirmed this.
    */
   h->chunks_received++;
   cookie = be64toh (h->sbuf.simple_reply.cookie);
@@ -155,7 +165,8 @@ STATE_MACHINE {
   bool retire;
 
   /* NB: This works for both simple and structured replies because the
-   * handle (our cookie) is stored at the same offset.
+   * handle (our cookie) is stored at the same offset.  See the
+   * STATIC_ASSERT above in state REPLY.START that confirmed this.
    */
   cookie = be64toh (h->sbuf.simple_reply.cookie);
   /* Find the command amongst the commands in flight. */

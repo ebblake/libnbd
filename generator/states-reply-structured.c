@@ -19,6 +19,7 @@
 /* State machine for parsing structured replies from the server. */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -45,11 +46,15 @@ structured_reply_in_bounds (uint64_t offset, uint32_t length,
 
 STATE_MACHINE {
  REPLY.STRUCTURED_REPLY.START:
-  /* We've only read the simple_reply.  The structured_reply is longer,
-   * so read the remaining part.
+  /* We've only read the bytes that fill simple_reply.  The
+   * structured_reply is longer, so read the remaining part.  We
+   * depend on the memory aliasing in union sbuf to overlay the two
+   * reply types.
    */
-  h->rbuf = &h->sbuf;
-  h->rbuf = (char *)h->rbuf + sizeof h->sbuf.simple_reply;
+  STATIC_ASSERT (sizeof h->sbuf.simple_reply ==
+                 offsetof (struct nbd_structured_reply, length),
+                 simple_structured_overlap);
+  assert (h->rbuf == (char *)&h->sbuf + sizeof h->sbuf.simple_reply);
   h->rlen = sizeof h->sbuf.sr.structured_reply;
   h->rlen -= sizeof h->sbuf.simple_reply;
   SET_NEXT_STATE (%RECV_REMAINING);
