@@ -380,9 +380,11 @@ let generate_lib_states_c () =
       pr "        h, &next, blocked\n";
       pr "      );\n";
       pr "  if (get_next_state (h) != next) {\n";
+      pr "#ifdef LIBNBD_STATE_VERBOSE\n";
       pr "    debug (h, \"transition: %%s -> %%s\",\n";
       pr "           \"%s\",\n" display_name;
       pr "           nbd_internal_state_short_string (next));\n";
+      pr "#endif\n";
       pr "    set_next_state (h, next);\n";
       pr "  }\n";
       pr "  return r;\n";
@@ -423,6 +425,7 @@ let generate_lib_states_run_c () =
             pr "    case %s:\n" (c_string_of_external_event e);
             if state != next_state then (
               pr "      set_next_state (h, %s);\n" next_state.parsed.state_enum;
+              pr "#ifdef LIBNBD_STATE_VERBOSE\n";
               pr "      debug (";
               let print_debug_args () =
                 pr "h, \"event %%s: %%s -> %%s\", ";
@@ -431,7 +434,8 @@ let generate_lib_states_run_c () =
                    display_name next_state.parsed.display_name;
               in
               pr_wrap ',' print_debug_args;
-              pr "\n"
+              pr "\n";
+              pr "#endif\n"
             );
             pr "      goto ok;\n";
         ) events;
