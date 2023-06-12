@@ -23,7 +23,7 @@ STATE_MACHINE {
   struct command *cmd = h->reply_cmd;
   uint32_t error;
 
-  error = be32toh (h->sbuf.simple_reply.error);
+  error = be32toh (h->sbuf.reply.hdr.simple.error);
 
   if (cmd == NULL) {
     /* Unexpected reply.  If error was set or we have structured
@@ -39,7 +39,7 @@ STATE_MACHINE {
     if (error || h->structured_replies)
       SET_NEXT_STATE (%^FINISH_COMMAND);
     else {
-      uint64_t cookie = be64toh (h->sbuf.simple_reply.cookie);
+      uint64_t cookie = be64toh (h->sbuf.reply.hdr.simple.cookie);
       SET_NEXT_STATE (%.DEAD);
       set_error (EPROTO,
                  "no matching cookie %" PRIu64 " found for server reply, "

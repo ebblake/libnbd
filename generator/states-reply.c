@@ -19,6 +19,11 @@
 #include <assert.h>
 #include <stddef.h>
 
+#define ASSERT_MEMBER_ALIAS(type, member_a, member_b) \
+  STATIC_ASSERT (offsetof (type, member_a) == offsetof (type, member_b) && \
+                 sizeof ((type *)NULL)->member_a == \
+                 sizeof ((type *)NULL)->member_b, member_alias)
+
 /* State machine for receiving reply messages from the server.
  *
  * Note that we never block while in this sub-group. If there is
@@ -70,16 +75,15 @@ STATE_MACHINE {
    * structs (an intentional design decision in the NBD spec when
    * structured replies were added).
    */
-  STATIC_ASSERT (offsetof (struct nbd_handle, sbuf.sr.structured_reply.cookie)
-                 == offsetof (struct nbd_handle, sbuf.simple_reply.cookie) &&
-                 sizeof ((struct nbd_simple_reply *)NULL)->cookie ==
-                 sizeof ((struct nbd_structured_reply *)NULL)->cookie,
-                 cookie_aliasing);
+  ASSERT_MEMBER_ALIAS (union reply_header, simple.magic, magic);
+  ASSERT_MEMBER_ALIAS (union reply_header, simple.cookie, cookie);
+  ASSERT_MEMBER_ALIAS (union reply_header, structured.magic, magic);
+  ASSERT_MEMBER_ALIAS (union reply_header, structured.cookie, cookie);
   assert (h->reply_cmd == NULL);
   assert (h->rlen == 0);
 
-  h->rbuf = &h->sbuf;
-  h->rlen = sizeof h->sbuf.simple_reply;
+  h->rbuf = &h->sbuf.reply.hdr;
+  h->rlen = sizeof h->sbuf.reply.hdr.simple;
 
   r = h->sock->ops->recv (h, h->sock, h->rbuf, h->rlen);
   if (r == -1) {
@@ -124,22 +128,22 @@ STATE_MACHINE {
   uint32_t magic;
   uint64_t cookie;
 
-  magic = be32toh (h->sbuf.simple_reply.magic);
+  magic = be32toh (h->sbuf.reply.hdr.magic);
   if (magic == NBD_SIMPLE_REPLY_MAGIC) {
     SET_NEXT_STATE (%SIMPLE_REPLY.START);
   }
   else if (magic == NBD_STRUCTURED_REPLY_MAGIC) {
-    /* We've only read the bytes that fill simple_reply.  The
-     * structured_reply is longer, so prepare to read the remaining
+    /* We've only read the bytes that fill hdr.simple.  But
+     * hdr.structured is longer, so prepare to read the remaining
      * bytes.  We depend on the memory aliasing in union sbuf to
      * overlay the two reply types.
      */
-    STATIC_ASSERT (sizeof h->sbuf.simple_reply ==
+    STATIC_ASSERT (sizeof h->sbuf.reply.hdr.simple ==
                    offsetof (struct nbd_structured_reply, length),
                    simple_structured_overlap);
-    assert (h->rbuf == (char *)&h->sbuf + sizeof h->sbuf.simple_reply);
-    h->rlen = sizeof h->sbuf.sr.structured_reply;
-    h->rlen -= sizeof h->sbuf.simple_reply;
+    assert (h->rbuf == (char *)&h->sbuf + sizeof h->sbuf.reply.hdr.simple);
+    h->rlen = sizeof h->sbuf.reply.hdr.structured;
+    h->rlen -= sizeof h->sbuf.reply.hdr.simple;
     SET_NEXT_STATE (%RECV_STRUCTURED_REMAINING);
   }
   else {
@@ -147,8 +151,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.DEAD);
     set_error (0, "invalid reply magic 0x%" PRIx32, magic);
 #if 0 /* uncomment to see desynchronized data */
-    nbd_internal_hexdump (&h->sbuf.simple_reply,
-                          sizeof (h->sbuf.simple_reply),
+    nbd_internal_hexdump (&h->sbuf.reply.hdr.simple,
+                          sizeof (h->sbuf.reply.hdr.simple),
                           stderr);
 #endif
     return 0;
@@ -160,7 +164,7 @@ STATE_MACHINE {
    * STATIC_ASSERT above in state REPLY.START that confirmed this.
    */
   h->chunks_received++;
-  cookie = be64toh (h->sbuf.simple_reply.cookie);
+  cookie = be64toh (h->sbuf.reply.hdr.cookie);
   /* Find the command amongst the commands in flight. If the server sends
    * a reply for an unknown cookie, FINISH will diagnose that later.
    */
@@ -191,7 +195,7 @@ STATE_MACHINE {
    * handle (our cookie) is stored at the same offset.  See the
    * STATIC_ASSERT above in state REPLY.START that confirmed this.
    */
-  cookie = be64toh (h->sbuf.simple_reply.cookie);
+  cookie = be64toh (h->sbuf.reply.hdr.cookie);
   /* Find the command amongst the commands in flight. */
   for (cmd = h->cmds_in_flight, prev_cmd = NULL;
        cmd != NULL;

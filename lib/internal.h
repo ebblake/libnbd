@@ -237,11 +237,21 @@ struct nbd_handle {
       } payload;
     } or;
     struct nbd_export_name_option_reply export_name_reply;
-    struct nbd_simple_reply simple_reply;
     struct {
-      struct nbd_structured_reply structured_reply;
+      union reply_header {
+        struct nbd_simple_reply simple;
+        struct nbd_structured_reply structured;
+        /* The wire formats share magic and cookie at the same offsets;
+         * provide aliases for one less level of typing.
+         */
+        struct {
+          uint32_t magic;
+          uint32_t pad_;
+          uint64_t cookie;
+        };
+      } hdr;
       union {
-        uint64_t align_; /* Start sr.payload on an 8-byte alignment */
+        uint64_t align_; /* Start reply.payload on an 8-byte alignment */
         struct nbd_chunk_offset_data offset_data;
         struct nbd_chunk_offset_hole offset_hole;
         struct {
@@ -250,7 +260,7 @@ struct nbd_handle {
           uint64_t offset; /* Only used for NBD_REPLY_TYPE_ERROR_OFFSET */
         } NBD_ATTRIBUTE_PACKED error;
       } payload;
-    } sr;
+    } reply;
     uint16_t gflags;
     uint32_t cflags;
     uint32_t len;

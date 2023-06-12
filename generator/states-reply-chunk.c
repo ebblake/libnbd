@@ -49,9 +49,9 @@ STATE_MACHINE {
   uint16_t flags, type;
   uint32_t length;
 
-  flags = be16toh (h->sbuf.sr.structured_reply.flags);
-  type = be16toh (h->sbuf.sr.structured_reply.type);
-  length = be32toh (h->sbuf.sr.structured_reply.length);
+  flags = be16toh (h->sbuf.reply.hdr.structured.flags);
+  type = be16toh (h->sbuf.reply.hdr.structured.type);
+  length = be32toh (h->sbuf.reply.hdr.structured.length);
 
   /* Reject a server that replies with too much information, but don't
    * reject a single structured reply to NBD_CMD_READ on the largest
@@ -60,7 +60,7 @@ STATE_MACHINE {
    * oversized reply is going to take long enough to resync that it is
    * not worth keeping the connection alive.
    */
-  if (length > MAX_REQUEST_SIZE + sizeof h->sbuf.sr.payload.offset_data) {
+  if (length > MAX_REQUEST_SIZE + sizeof h->sbuf.reply.payload.offset_data) {
     set_error (0, "invalid server reply length %" PRIu32, length);
     SET_NEXT_STATE (%.DEAD);
     return 0;
@@ -83,19 +83,19 @@ STATE_MACHINE {
      * them as an extension, so we use < instead of <=.
      */
     if (cmd->type != NBD_CMD_READ ||
-        length < sizeof h->sbuf.sr.payload.offset_data)
+        length < sizeof h->sbuf.reply.payload.offset_data)
       goto resync;
-    h->rbuf = &h->sbuf.sr.payload.offset_data;
-    h->rlen = sizeof h->sbuf.sr.payload.offset_data;
+    h->rbuf = &h->sbuf.reply.payload.offset_data;
+    h->rlen = sizeof h->sbuf.reply.payload.offset_data;
     SET_NEXT_STATE (%RECV_OFFSET_DATA);
     break;
 
   case NBD_REPLY_TYPE_OFFSET_HOLE:
     if (cmd->type != NBD_CMD_READ ||
-        length != sizeof h->sbuf.sr.payload.offset_hole)
+        length != sizeof h->sbuf.reply.payload.offset_hole)
       goto resync;
-    h->rbuf = &h->sbuf.sr.payload.offset_hole;
-    h->rlen = sizeof h->sbuf.sr.payload.offset_hole;
+    h->rbuf = &h->sbuf.reply.payload.offset_hole;
+    h->rlen = sizeof h->sbuf.reply.payload.offset_hole;
     SET_NEXT_STATE (%RECV_OFFSET_HOLE);
     break;
 
@@ -126,10 +126,10 @@ STATE_MACHINE {
        * compliant, will favor the wire error over EPROTO during more
        * length checks in RECV_ERROR_MESSAGE and RECV_ERROR_TAIL.
        */
-      if (length < sizeof h->sbuf.sr.payload.error.error.error)
+      if (length < sizeof h->sbuf.reply.payload.error.error.error)
         goto resync;
-      h->rbuf = &h->sbuf.sr.payload.error.error;
-      h->rlen = MIN (length, sizeof h->sbuf.sr.payload.error.error);
+      h->rbuf = &h->sbuf.reply.payload.error.error;
+      h->rlen = MIN (length, sizeof h->sbuf.reply.payload.error.error);
       SET_NEXT_STATE (%RECV_ERROR);
     }
     else
@@ -155,19 +155,19 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.sr.structured_reply.length);
-    assert (length >= sizeof h->sbuf.sr.payload.error.error.error);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
+    assert (length >= sizeof h->sbuf.reply.payload.error.error.error);
     assert (cmd);
 
-    if (length < sizeof h->sbuf.sr.payload.error.error)
+    if (length < sizeof h->sbuf.reply.payload.error.error)
       goto resync;
 
-    msglen = be16toh (h->sbuf.sr.payload.error.error.len);
-    if (msglen > length - sizeof h->sbuf.sr.payload.error.error ||
-        msglen > sizeof h->sbuf.sr.payload.error.msg)
+    msglen = be16toh (h->sbuf.reply.payload.error.error.len);
+    if (msglen > length - sizeof h->sbuf.reply.payload.error.error ||
+        msglen > sizeof h->sbuf.reply.payload.error.msg)
       goto resync;
 
-    h->rbuf = h->sbuf.sr.payload.error.msg;
+    h->rbuf = h->sbuf.reply.payload.error.msg;
     h->rlen = msglen;
     SET_NEXT_STATE (%RECV_ERROR_MESSAGE);
   }
@@ -175,11 +175,11 @@ STATE_MACHINE {
 
  resync:
   /* Favor the error packet's errno over RESYNC's EPROTO. */
-  error = be32toh (h->sbuf.sr.payload.error.error.error);
+  error = be32toh (h->sbuf.reply.payload.error.error.error);
   if (cmd->error == 0)
     cmd->error = nbd_internal_errno_of_nbd_error (error);
   h->rbuf = NULL;
-  h->rlen = length - MIN (length, sizeof h->sbuf.sr.payload.error.error);
+  h->rlen = length - MIN (length, sizeof h->sbuf.reply.payload.error.error);
   SET_NEXT_STATE (%RESYNC);
   return 0;
 
@@ -194,15 +194,15 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.sr.structured_reply.length);
-    msglen = be16toh (h->sbuf.sr.payload.error.error.len);
-    type = be16toh (h->sbuf.sr.structured_reply.type);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
+    msglen = be16toh (h->sbuf.reply.payload.error.error.len);
+    type = be16toh (h->sbuf.reply.hdr.structured.type);
 
-    length -= sizeof h->sbuf.sr.payload.error.error + msglen;
+    length -= sizeof h->sbuf.reply.payload.error.error + msglen;
 
     if (msglen)
       debug (h, "structured error server message: %.*s", (int)msglen,
-             h->sbuf.sr.payload.error.msg);
+             h->sbuf.reply.payload.error.msg);
 
     /* Special case two specific errors; silently ignore tail for all others */
     h->rbuf = NULL;
@@ -214,11 +214,11 @@ STATE_MACHINE {
                "the server may have a bug");
       break;
     case NBD_REPLY_TYPE_ERROR_OFFSET:
-      if (length != sizeof h->sbuf.sr.payload.error.offset)
+      if (length != sizeof h->sbuf.reply.payload.error.offset)
         debug (h, "unable to safely extract error offset, "
                "the server may have a bug");
       else
-        h->rbuf = &h->sbuf.sr.payload.error.offset;
+        h->rbuf = &h->sbuf.reply.payload.error.offset;
       break;
     }
     SET_NEXT_STATE (%RECV_ERROR_TAIL);
@@ -237,8 +237,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    error = be32toh (h->sbuf.sr.payload.error.error.error);
-    type = be16toh (h->sbuf.sr.structured_reply.type);
+    error = be32toh (h->sbuf.reply.payload.error.error.error);
+    type = be16toh (h->sbuf.reply.hdr.structured.type);
 
     assert (cmd); /* guaranteed by CHECK */
 
@@ -253,7 +253,7 @@ STATE_MACHINE {
      * user callback if present.  Ignore the offset if it was bogus.
      */
     if (type == NBD_REPLY_TYPE_ERROR_OFFSET && h->rbuf) {
-      uint64_t offset = be64toh (h->sbuf.sr.payload.error.offset);
+      uint64_t offset = be64toh (h->sbuf.reply.payload.error.offset);
       if (structured_reply_in_bounds (offset, 0, cmd) &&
           cmd->type == NBD_CMD_READ &&
           CALLBACK_IS_NOT_NULL (cmd->cb.fn.chunk)) {
@@ -294,8 +294,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.sr.structured_reply.length);
-    offset = be64toh (h->sbuf.sr.payload.offset_data.offset);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
+    offset = be64toh (h->sbuf.reply.payload.offset_data.offset);
 
     assert (cmd); /* guaranteed by CHECK */
 
@@ -333,8 +333,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.sr.structured_reply.length);
-    offset = be64toh (h->sbuf.sr.payload.offset_data.offset);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
+    offset = be64toh (h->sbuf.reply.payload.offset_data.offset);
 
     assert (cmd); /* guaranteed by CHECK */
     if (CALLBACK_IS_NOT_NULL (cmd->cb.fn.chunk)) {
@@ -364,8 +364,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    offset = be64toh (h->sbuf.sr.payload.offset_hole.offset);
-    length = be32toh (h->sbuf.sr.payload.offset_hole.length);
+    offset = be64toh (h->sbuf.reply.payload.offset_hole.offset);
+    length = be32toh (h->sbuf.reply.payload.offset_hole.length);
 
     assert (cmd); /* guaranteed by CHECK */
 
@@ -415,7 +415,7 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.sr.structured_reply.length);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
 
     assert (cmd); /* guaranteed by CHECK */
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
@@ -478,8 +478,8 @@ STATE_MACHINE {
       SET_NEXT_STATE (%^FINISH_COMMAND);
       return 0;
     }
-    type = be16toh (h->sbuf.sr.structured_reply.type);
-    length = be32toh (h->sbuf.sr.structured_reply.length);
+    type = be16toh (h->sbuf.reply.hdr.structured.type);
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
     debug (h, "unexpected reply type %u or payload length %" PRIu32
            " for cookie %" PRIu64 " and command %" PRIu32
            ", this is probably a server bug",
@@ -493,7 +493,7 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.FINISH:
   uint16_t flags;
 
-  flags = be16toh (h->sbuf.sr.structured_reply.flags);
+  flags = be16toh (h->sbuf.reply.hdr.structured.flags);
   if (flags & NBD_REPLY_FLAG_DONE) {
     SET_NEXT_STATE (%^FINISH_COMMAND);
   }
