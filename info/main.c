@@ -136,6 +136,7 @@ main (int argc, char *argv[])
   size_t output_len = 0;
   bool content_flag = false, no_content_flag = false;
   bool list_okay = true;
+  bool opt_mode = false;
 
   progname = argv[0];
   colour = isatty (STDOUT_FILENO);
@@ -278,7 +279,8 @@ main (int argc, char *argv[])
   nbd_set_uri_allow_local_file (nbd, true); /* Allow ?tls-psk-file. */
 
   /* Set optional modes in the handle. */
-  if (!can && !map && !size_only) {
+  opt_mode = !can && !map && !size_only;
+  if (opt_mode) {
     nbd_set_opt_mode (nbd, true);
     nbd_set_full_info (nbd, true);
   }
@@ -345,7 +347,8 @@ main (int argc, char *argv[])
   }
 
   free_exports ();
-  nbd_opt_abort (nbd);
+  if (opt_mode)
+    nbd_opt_abort (nbd);
   nbd_shutdown (nbd, 0);
   nbd_close (nbd);
 
