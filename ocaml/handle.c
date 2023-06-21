@@ -26,6 +26,7 @@
 #include <caml/fail.h>
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
+#include <caml/threads.h>
 
 #include <libnbd.h>
 
@@ -36,7 +37,9 @@ nbd_internal_ocaml_handle_finalize (value hv)
 {
   struct nbd_handle *h = NBD_val (hv);
 
+  caml_enter_blocking_section ();
   nbd_close (h);
+  caml_leave_blocking_section ();
 }
 
 value
