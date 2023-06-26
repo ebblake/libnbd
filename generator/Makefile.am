@@ -81,7 +81,7 @@ stamp-generator: generator $(states_code)
 
 generator: $(sources)
 	$(OCAMLC) $(OCAML_FLAGS) $(OCAML_WARN_ERROR) -I $(srcdir) -I . \
-	  str.cma unix.cma $(sources) -o $@
+	  -I +str str.cma -I +unix unix.cma $(sources) -o $@
 
 else
 
