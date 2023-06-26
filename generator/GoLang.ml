@@ -30,17 +30,6 @@ open Printf
 open API
 open Utils
 
-(* Convert C function name to camel-case name.
- * Regular but somewhat hit and miss.
- *)
-let camel_case name =
-  let xs = nsplit "_" name in
-  List.fold_left (
-    fun a x ->
-      a ^ String.uppercase_ascii (Str.first_chars x 1) ^
-          String.lowercase_ascii (Str.string_after x 1)
-  ) "" xs
-
 let go_name_of_arg = function
   | Bool n -> n
   | BytesIn (n, len) -> n

@@ -500,3 +500,11 @@ let pod2text longdesc =
     Hashtbl.add cache key lines;
     save_cache ();
     lines
+
+let camel_case name =
+  let xs = nsplit "_" name in
+  List.fold_left (
+    fun a x ->
+      a ^ String.uppercase_ascii (Str.first_chars x 1) ^
+          String.lowercase_ascii (Str.string_after x 1)
+  ) "" xs

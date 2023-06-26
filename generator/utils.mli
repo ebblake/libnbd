@@ -65,3 +65,6 @@ val line_directive_of_location : location -> string
 type cache_key = string
 type cache_value = string list
 val pod2text : cache_key -> cache_value
+
+(* Convert C function name to upper-camel-case name. *)
+val camel_case : string -> string
