@@ -34,12 +34,18 @@
 struct progress {
   int id;
   int visit;
+  bool freed;
 };
 
 static int
 check (void *user_data, const char *name, const char *description)
 {
   struct progress *p = user_data;
+
+  if (p->freed) {
+    fprintf (stderr, "use after free callback");
+    exit (EXIT_FAILURE);
+  }
 
   if (*description) {
     fprintf (stderr, "unexpected description for id %d visit %d: %s\n",
@@ -92,6 +98,18 @@ check (void *user_data, const char *name, const char *description)
   return 0;
 }
 
+static void
+cb_free (void *user_data)
+{
+  struct progress *p = user_data;
+
+  if (p->freed) {
+    fprintf (stderr, "too many free callbacks");
+    exit (EXIT_FAILURE);
+  }
+  p->freed = true;
+}
+
 static struct nbd_handle*
 prepare (int i)
 {
@@ -133,7 +151,8 @@ main (int argc, char *argv[])
   nbd = prepare (0);
   p = (struct progress) { .id = 0 };
   r = nbd_opt_list (nbd, (nbd_list_callback) { .callback = check,
-                                               .user_data = &p});
+                                               .user_data = &p,
+                                               .free = cb_free});
   if (r != -1) {
     fprintf (stderr, "expected error after opt_list\n");
     exit (EXIT_FAILURE);
@@ -142,13 +161,18 @@ main (int argc, char *argv[])
     fprintf (stderr, "callback called unexpectedly\n");
     exit (EXIT_FAILURE);
   }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
+    exit (EXIT_FAILURE);
+  }
   cleanup (nbd);
 
   /* Second pass: server advertises 'a' and 'b'. */
   nbd = prepare (1);
   p = (struct progress) { .id = 1 };
   r = nbd_opt_list (nbd, (nbd_list_callback) { .callback = check,
-                                               .user_data = &p});
+                                               .user_data = &p,
+                                               .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -158,13 +182,18 @@ main (int argc, char *argv[])
              r);
     exit (EXIT_FAILURE);
   }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
+    exit (EXIT_FAILURE);
+  }
   cleanup (nbd);
 
   /* Third pass: server advertises empty list. */
   nbd = prepare (2);
   p = (struct progress) { .id = 2 };
   r = nbd_opt_list (nbd, (nbd_list_callback) { .callback = check,
-                                               .user_data = &p});
+                                               .user_data = &p,
+                                               .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -174,13 +203,18 @@ main (int argc, char *argv[])
              r);
     exit (EXIT_FAILURE);
   }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
+    exit (EXIT_FAILURE);
+  }
   cleanup (nbd);
 
   /* Final pass: server advertises 'a'. */
   nbd = prepare (3);
   p = (struct progress) { .id = 3 };
   r = nbd_opt_list (nbd, (nbd_list_callback) { .callback = check,
-                                               .user_data = &p});
+                                               .user_data = &p,
+                                               .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -188,6 +222,10 @@ main (int argc, char *argv[])
   else if (r != 1 || p.visit != r) {
     fprintf (stderr, "wrong number of exports, got %" PRId64 " expecting 1\n",
              r);
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
   cleanup (nbd);

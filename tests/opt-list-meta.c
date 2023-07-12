@@ -34,6 +34,7 @@
 struct progress {
   int count;
   bool seen;
+  bool freed;
 };
 
 static int
@@ -41,10 +42,27 @@ check (void *user_data, const char *name)
 {
   struct progress *p = user_data;
 
+  if (p->freed) {
+    fprintf (stderr, "use after free callback");
+    exit (EXIT_FAILURE);
+  }
+
   p->count++;
   if (strcmp (name, LIBNBD_CONTEXT_BASE_ALLOCATION) == 0)
     p->seen = true;
   return 0;
+}
+
+static void
+cb_free (void *user_data)
+{
+  struct progress *p = user_data;
+
+  if (p->freed) {
+    fprintf (stderr, "too many free callbacks");
+    exit (EXIT_FAILURE);
+  }
+  p->freed = true;
 }
 
 int
@@ -72,7 +90,8 @@ main (int argc, char *argv[])
   p = (struct progress) { .count = 0 };
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -83,6 +102,10 @@ main (int argc, char *argv[])
   }
   if (r < 1 || !p.seen) {
     fprintf (stderr, "server did not reply with base:allocation\n");
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
   max = p.count;
@@ -96,13 +119,18 @@ main (int argc, char *argv[])
   }
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
   if (r != 0 || p.count != 0 || p.seen) {
     fprintf (stderr, "expecting no contexts, got %d\n", r);
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
 
@@ -129,13 +157,18 @@ main (int argc, char *argv[])
   free (tmp);
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
   if (r != 1 || p.count != 1 || !p.seen) {
     fprintf (stderr, "expecting exactly one context, got %d\n", r);
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
 
@@ -182,13 +215,18 @@ main (int argc, char *argv[])
   p = (struct progress) { .count = 0 };
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
   if (r != 0 || p.count != 0 || p.seen) {
     fprintf (stderr, "expecting no contexts, got %d\n", r);
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
   r = nbd_get_size (nbd);
@@ -219,13 +257,18 @@ main (int argc, char *argv[])
   }
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
   if (r < 1 || r > max || r != p.count || !p.seen) {
     fprintf (stderr, "expecting at least one context, got %d\n", r);
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
 
@@ -248,7 +291,8 @@ main (int argc, char *argv[])
   p = (struct progress) { .count = 0 };
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     if (nbd_stats_bytes_sent (nbd) == bytes) {
       fprintf (stderr, "bug: client failed to send request\n");
@@ -268,6 +312,10 @@ main (int argc, char *argv[])
       exit (EXIT_FAILURE);
     }
   }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
+    exit (EXIT_FAILURE);
+  }
 
   /* Now enable structured replies, and a retry should pass. */
   r = nbd_opt_structured_reply (nbd);
@@ -283,7 +331,8 @@ main (int argc, char *argv[])
   p = (struct progress) { .count = 0 };
   r = nbd_opt_list_meta_context (nbd,
                                  (nbd_context_callback) { .callback = check,
-                                                          .user_data = &p});
+                                                          .user_data = &p,
+                                                          .free = cb_free});
   if (r == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
@@ -295,6 +344,10 @@ main (int argc, char *argv[])
   }
   if (r < 1 || !p.seen) {
     fprintf (stderr, "server did not reply with base:allocation\n");
+    exit (EXIT_FAILURE);
+  }
+  if (!p.freed) {
+    fprintf (stderr, "callback not freed by libnbd\n");
     exit (EXIT_FAILURE);
   }
 
