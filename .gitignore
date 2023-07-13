@@ -220,6 +220,7 @@ Makefile.in
 /tests/errors-name-too-long
 /tests/errors-not-connected
 /tests/errors-not-negotiating
+/tests/errors-not-negotiating-aio
 /tests/errors-notify-not-blocked
 /tests/errors-poll-no-fd
 /tests/errors-pread-structured

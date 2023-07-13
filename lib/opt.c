@@ -223,6 +223,7 @@ nbd_unlocked_opt_list (struct nbd_handle *h, nbd_list_callback *list)
   if (nbd_unlocked_aio_opt_list (h, &l, &c) == -1)
     return -1;
 
+  assert (CALLBACK_IS_NULL (l));
   SET_CALLBACK_TO_NULL (*list);
   if (wait_for_option (h) == -1)
     return -1;
@@ -269,6 +270,7 @@ opt_meta_context_queries (struct nbd_handle *h,
   if (aio_opt_meta_context_queries (h, opt, queries, &l, &c) == -1)
     return -1;
 
+  assert (CALLBACK_IS_NULL (l));
   SET_CALLBACK_TO_NULL (*context);
   if (wait_for_option (h) == -1)
     return -1;

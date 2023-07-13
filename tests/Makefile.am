@@ -171,6 +171,7 @@ check_PROGRAMS += \
 	errors-connect-null \
 	errors-connect-twice \
 	errors-not-negotiating \
+	errors-not-negotiating-aio \
 	errors-notify-not-blocked \
 	errors-bad-cookie \
 	errors-pread-structured \
@@ -243,6 +244,7 @@ TESTS += \
 	errors-connect-null \
 	errors-connect-twice \
 	errors-not-negotiating \
+	errors-not-negotiating-aio \
 	errors-notify-not-blocked \
 	errors-bad-cookie \
 	errors-pread-structured \
@@ -331,6 +333,9 @@ errors_connect_twice_LDADD = $(top_builddir)/lib/libnbd.la
 
 errors_not_negotiating_SOURCES = errors-not-negotiating.c
 errors_not_negotiating_LDADD = $(top_builddir)/lib/libnbd.la
+
+errors_not_negotiating_aio_SOURCES = errors-not-negotiating-aio.c
+errors_not_negotiating_aio_LDADD = $(top_builddir)/lib/libnbd.la
 
 errors_notify_not_blocked_SOURCES = errors-notify-not-blocked.c
 errors_notify_not_blocked_LDADD = $(top_builddir)/lib/libnbd.la
