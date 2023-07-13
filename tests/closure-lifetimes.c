@@ -66,6 +66,7 @@ read_cb (void *opaque,
          uint64_t offset, unsigned status, int *error)
 {
   assert (!read_cb_freed);
+  assert (!completion_cb_called);
   read_cb_called++;
   return 0;
 }
@@ -73,6 +74,7 @@ read_cb (void *opaque,
 static void
 read_cb_free (void *opaque)
 {
+  assert (!completion_cb_freed);
   read_cb_freed++;
 }
 
@@ -81,6 +83,7 @@ block_status_cb (void *opaque, const char *meta, uint64_t offset,
                  uint32_t *entries, size_t nr_entries, int *error)
 {
   assert (!block_status_cb_freed);
+  assert (!completion_cb_called);
   block_status_cb_called++;
   return 0;
 }
@@ -88,6 +91,7 @@ block_status_cb (void *opaque, const char *meta, uint64_t offset,
 static void
 block_status_cb_free (void *opaque)
 {
+  assert (!completion_cb_freed);
   block_status_cb_freed++;
 }
 
@@ -150,6 +154,10 @@ main (int argc, char *argv[])
   cookie = nbd_aio_pread_structured (nbd, buf, sizeof buf, 0, chunk_callback,
                                      completion_callback, 0);
   if (cookie == -1) NBD_ERROR;
+  /* read_cb_called is indeterminate at this point, as state machine
+   * progress may vary based on task schduling and network speed factors.
+   */
+  assert (completion_cb_called == 0);
   assert (read_cb_freed == 0);
   assert (completion_cb_freed == 0);
   while (!nbd_aio_command_completed (nbd, cookie)) {
@@ -179,6 +187,8 @@ main (int argc, char *argv[])
   nbd_kill_subprocess (nbd, 0);
   nbd_close (nbd);
 
+  /* read_cb_called is indeterminate based on timing of kill. */
+  assert (completion_cb_called == 1);
   assert (read_cb_freed == 1);
   assert (completion_cb_freed == 1);
 
@@ -198,6 +208,8 @@ main (int argc, char *argv[])
     fprintf (stderr, "%s: Expecting block_status failure\n", argv[0]);
     exit (EXIT_FAILURE);
   }
+  assert (block_status_cb_called == 0);
+  assert (completion_cb_called == 0);
   assert (block_status_cb_freed == 1);
   assert (completion_cb_freed == 1);
 
@@ -212,6 +224,8 @@ main (int argc, char *argv[])
     fprintf (stderr, "%s: Expecting block_status failure\n", argv[0]);
     exit (EXIT_FAILURE);
   }
+  assert (block_status_cb_called == 0);
+  assert (completion_cb_called == 0);
   assert (block_status_cb_freed == 1);
   assert (completion_cb_freed == 1);
 

@@ -37,7 +37,10 @@ free_cmd_list (struct command *list)
   struct command *cmd, *cmd_next;
 
   for (cmd = list; cmd != NULL; cmd = cmd_next) {
+    int error = cmd->error ? : ENOTCONN;
+
     cmd_next = cmd->next;
+    CALL_CALLBACK (cmd->cb.completion, &error);
     nbd_internal_retire_and_free_command (cmd);
   }
 }

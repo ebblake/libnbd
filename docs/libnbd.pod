@@ -171,8 +171,12 @@ There are several things to note here:
 
 =item *
 
-This only starts the command.  The command is still in flight when the
-call returns.
+This only starts the command.  The command is (usually) still in
+flight when the call returns success, where you must rely on
+subsequent API calls for learning the final command outcome and
+trigger any remaining callbacks.  However, you must also be able to
+handle the case where system load allows the state machine to advance
+far enough to invoke callbacks before the asynchronous API returns.
 
 =item *
 
@@ -194,7 +198,10 @@ calls.  The cookie is unique (per libnbd handle) and E<ge> 1.
 
 You may register a function which is called when the command
 completes, see L</Completion callbacks> below.  In this case we have
-specified a null completion callback.
+specified a null completion callback.  If a completion callback is
+specified, it will only be called if the asynchronous command was
+sucessfully submitted (if the asynchronous API itself returns an
+error, there is nothing further to be completed).
 
 =back
 
@@ -897,16 +904,25 @@ asynchronous commands are retired.
 
 =head2 Callbacks and locking
 
-The callbacks are invoked at a point where the libnbd lock is held; as
-such, it is unsafe for the callback to call any C<nbd_*> APIs on the
-same nbd object, as it would cause deadlock.
+The callbacks are invoked at a point where the libnbd lock is held,
+typically during a call to C<nbd_aio_notify_read>,
+C<nbd_aio_notify_write>, C<nbd_aio_poll>, or other call that can
+advance libnbd's state machine.  Depending on system load, it is even
+possible for a callback to reached before completion of the
+C<nbd_aio_*> call that specified the callback.  As such, it is unsafe
+for the callback to call any C<nbd_*> APIs on the same nbd object, as
+it would cause deadlock.
 
 =head2 Completion callbacks
 
 All of the asychronous commands have an optional completion callback
-function that is used right before the command is marked complete,
-after any mid-command callbacks have finished, and before any free
-functions.
+function that is used if the call to the asynchronous API reports
+success.  The completion callback is invoked when the submitted
+command is eventually marked complete, after any mid-command callbacks
+have finished, and before any free functions.  The completion callback
+is not reached if the asynchronous API itself fails, while free
+callbacks are reached regardless of the result of the initial
+asynchronous API.
 
 When the completion callback returns C<1>, the command is
 automatically retired (there is no need to call
@@ -946,13 +962,16 @@ mid-command callback may be reached more times than expected if the
 server is non-compliant.
 
 On the other hand, if a completion callback is supplied (only possible
-with asynchronous commands), it will always be reached exactly once,
-and the completion callback must not ignore the value pointed to by
-C<error>.  In particular, the content of a buffer passed to
-L<nbd_aio_pread(3)> or L<nbd_aio_pread_structured(3)> is undefined
-if C<*error> is non-zero on entry to the completion callback.  It is
-recommended that if you choose to use automatic command retirement
-(where the completion callback returns C<1> to avoid needing to call
+with asynchronous commands), it will not be called if the initial API
+call fails (such as attempting an asynchronous command in the wrong
+state - there is nothing to be completed since the command was not
+queued), but will otherwise be called exactly once, and the completion
+callback must not ignore the value pointed to by C<error>.  In
+particular, the content of a buffer passed to L<nbd_aio_pread(3)> or
+L<nbd_aio_pread_structured(3)> is undefined if C<*error> is non-zero
+on entry to the completion callback.  It is recommended that if you
+choose to use automatic command retirement (where the completion
+callback returns C<1> to avoid needing to call
 L<nbd_aio_command_completed(3)> later), your completion function
 should return C<1> on all control paths, even when handling errors
 (note that with automatic retirement, assigning into C<error> is
