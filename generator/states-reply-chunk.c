@@ -101,6 +101,7 @@ STATE_MACHINE {
 
   case NBD_REPLY_TYPE_BLOCK_STATUS:
     if (cmd->type != NBD_CMD_BLOCK_STATUS ||
+        !h->meta_valid || h->meta_contexts.len == 0 ||
         length < 12 || ((length-4) & 7) != 0)
       goto resync;
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
