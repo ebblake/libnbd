@@ -200,7 +200,7 @@ You may register a function which is called when the command
 completes, see L</Completion callbacks> below.  In this case we have
 specified a null completion callback.  If a completion callback is
 specified, it will only be called if the asynchronous command was
-sucessfully submitted (if the asynchronous API itself returns an
+successfully submitted (if the asynchronous API itself returns an
 error, there is nothing further to be completed).
 
 =back
@@ -908,7 +908,7 @@ The callbacks are invoked at a point where the libnbd lock is held,
 typically during a call to C<nbd_aio_notify_read>,
 C<nbd_aio_notify_write>, C<nbd_aio_poll>, or other call that can
 advance libnbd's state machine.  Depending on system load, it is even
-possible for a callback to reached before completion of the
+possible for a callback to be reached before completion of the
 C<nbd_aio_*> call that specified the callback.  As such, it is unsafe
 for the callback to call any C<nbd_*> APIs on the same nbd object, as
 it would cause deadlock.
