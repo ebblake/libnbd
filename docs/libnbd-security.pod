@@ -34,6 +34,11 @@ silent data corruption when using L<nbdcopy(1)>
 See the full announcement here:
 L<https://listman.redhat.com/archives/libguestfs/2022-February/msg00104.html>
 
+=head3 integration testing denial of service with block status
+
+See the full announcement here:
+L<https://www.redhat.com/archives/libguestfs/2023-July/032035.html>
+
 =head1 SEE ALSO
 
 L<libnbd(3)>.
