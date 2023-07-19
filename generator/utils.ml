@@ -365,7 +365,8 @@ type comment_style =
   | CStyle | CPlusPlusStyle | HashStyle | OCamlStyle | HaskellStyle
   | PODCommentStyle
 
-let generate_header ?(extra_sources = []) comment_style =
+let generate_header ?(extra_sources = []) ?(copyright = "Red Hat")
+    comment_style =
   let inputs = "generator/generator" :: extra_sources in
   let c = match comment_style with
     | CStyle ->         pr "/* "; " *"
@@ -379,7 +380,7 @@ let generate_header ?(extra_sources = []) comment_style =
   pr "%s %s\n" c (String.concat " " inputs);
   pr "%s ANY CHANGES YOU MAKE TO THIS FILE WILL BE LOST.\n" c;
   pr "%s\n" c;
-  pr "%s Copyright Red Hat\n" c;
+  pr "%s Copyright %s\n" c copyright;
   pr "%s\n" c;
   pr "%s This library is free software; you can redistribute it and/or\n" c;
   pr "%s modify it under the terms of the GNU Lesser General Public\n" c;

@@ -48,7 +48,8 @@ val quote : string -> string
 val spaces : int -> string
 val files_equal : string -> string -> bool
 
-val generate_header : ?extra_sources:string list -> comment_style -> unit
+val generate_header :
+  ?extra_sources:string list -> ?copyright:string -> comment_style -> unit
 
 val output_to : string -> (unit -> 'a) -> unit
 val pr : ('a, unit, string, unit) format4 -> 'a
