@@ -254,6 +254,7 @@ struct nbd_handle {
         uint64_t align_; /* Start reply.payload on an 8-byte alignment */
         struct nbd_chunk_offset_data offset_data;
         struct nbd_chunk_offset_hole offset_hole;
+        struct nbd_chunk_block_status_32 bs_hdr_32;
         struct {
           struct nbd_chunk_error error;
           char msg[NBD_MAX_STRING]; /* Common to all error types */
@@ -308,6 +309,7 @@ struct nbd_handle {
   size_t payload_left;
 
   /* When receiving block status, this is used. */
+  size_t bs_count; /* count of block descriptors (not array entries!) */
   uint32_t *bs_entries;
 
   /* Commands which are waiting to be issued [meaning the request

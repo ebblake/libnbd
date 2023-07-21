@@ -866,8 +866,15 @@ and chunk_reply_state_machine = [
 
   State {
     default_state with
+    name = "RECV_BS_HEADER";
+    comment = "Receive header of a chunk reply block-status payload";
+    external_events = [];
+  };
+
+  State {
+    default_state with
     name = "RECV_BS_ENTRIES";
-    comment = "Receive a chunk reply block-status payload";
+    comment = "Receive entries array of chunk reply block-status payload";
     external_events = [];
   };
 

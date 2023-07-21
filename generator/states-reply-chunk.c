@@ -43,6 +43,28 @@ structured_reply_in_bounds (uint64_t offset, uint32_t length,
   return true;
 }
 
+/* Return true if payload length of block status reply is valid.
+ */
+static bool
+bs_reply_length_ok (uint16_t type, uint32_t length)
+{
+  /* TODO support 64-bit replies */
+  size_t prefix_len = sizeof (struct nbd_chunk_block_status_32);
+  size_t extent_len = sizeof (struct nbd_block_descriptor_32);
+  assert (type == NBD_REPLY_TYPE_BLOCK_STATUS);
+
+  /* At least one descriptor is needed after id prefix */
+  if (length < prefix_len + extent_len)
+    return false;
+
+  /* There must be an integral number of extents */
+  length -= prefix_len;
+  if (length % extent_len != 0)
+    return false;
+
+  return true;
+}
+
 STATE_MACHINE {
  REPLY.CHUNK_REPLY.START:
   struct command *cmd = h->reply_cmd;
@@ -105,22 +127,13 @@ STATE_MACHINE {
   case NBD_REPLY_TYPE_BLOCK_STATUS:
     if (cmd->type != NBD_CMD_BLOCK_STATUS ||
         !h->meta_valid || h->meta_contexts.len == 0 ||
-        length < 12 || ((length-4) & 7) != 0)
+        !bs_reply_length_ok (type, length))
       goto resync;
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
-    /* We read the context ID followed by all the entries into a
-     * single array and deal with it at the end.
-     */
-    free (h->bs_entries);
-    h->bs_entries = malloc (length);
-    if (h->bs_entries == NULL) {
-      SET_NEXT_STATE (%.DEAD);
-      set_error (errno, "malloc");
-      break;
-    }
-    h->rbuf = h->bs_entries;
-    h->rlen = length;
-    SET_NEXT_STATE (%RECV_BS_ENTRIES);
+    /* Start by reading the context ID. */
+    h->rbuf = &h->sbuf.reply.payload.bs_hdr_32;
+    h->rlen = sizeof h->sbuf.reply.payload.bs_hdr_32;
+    SET_NEXT_STATE (%RECV_BS_HEADER);
     break;
 
   default:
@@ -400,10 +413,46 @@ STATE_MACHINE {
   }
   return 0;
 
+ REPLY.CHUNK_REPLY.RECV_BS_HEADER:
+  struct command *cmd = h->reply_cmd;
+  uint16_t type;
+
+  switch (recv_into_rbuf (h)) {
+  case -1: SET_NEXT_STATE (%.DEAD); return 0;
+  case 1:
+    save_reply_state (h);
+    SET_NEXT_STATE (%.READY);
+    return 0;
+  case 0:
+    type = be16toh (h->sbuf.reply.hdr.structured.type);
+
+    assert (cmd); /* guaranteed by CHECK */
+    assert (cmd->type == NBD_CMD_BLOCK_STATUS);
+    assert (bs_reply_length_ok (type, h->payload_left));
+    STATIC_ASSERT (sizeof (struct nbd_block_descriptor_32) ==
+                   2 * sizeof *h->bs_entries,
+                   _block_desc_is_multiple_of_bs_entry);
+    h->payload_left -= sizeof h->sbuf.reply.payload.bs_hdr_32;
+    assert (h->payload_left % sizeof (struct nbd_block_descriptor_32) == 0);
+    h->bs_count = h->payload_left / sizeof (struct nbd_block_descriptor_32);
+
+    free (h->bs_entries);
+    h->bs_entries = malloc (h->payload_left);
+    if (h->bs_entries == NULL) {
+      SET_NEXT_STATE (%.DEAD);
+      set_error (errno, "malloc");
+      return 0;
+    }
+    h->rbuf = h->bs_entries;
+    h->rlen = h->payload_left;
+    h->payload_left = 0;
+    SET_NEXT_STATE (%RECV_BS_ENTRIES);
+  }
+  return 0;
+
  REPLY.CHUNK_REPLY.RECV_BS_ENTRIES:
   struct command *cmd = h->reply_cmd;
   size_t i;
-  size_t count;
   uint32_t context_id;
 
   switch (recv_into_rbuf (h)) {
@@ -416,31 +465,30 @@ STATE_MACHINE {
     assert (cmd); /* guaranteed by CHECK */
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
-    assert (h->bs_entries);
-    assert (h->payload_left >= 12);
+    assert (h->bs_count && h->bs_entries);
     assert (h->meta_valid);
 
-    /* Need to byte-swap the entries returned, but apart from that we
-     * don't validate them.
-     */
-    for (i = 0; i < h->payload_left / sizeof *h->bs_entries; ++i)
-      h->bs_entries[i] = be32toh (h->bs_entries[i]);
-    count = (h->payload_left / sizeof *h->bs_entries) - 1;
-    h->payload_left = 0;
-
     /* Look up the context ID. */
-    context_id = h->bs_entries[0];
+    context_id = be32toh (h->sbuf.reply.payload.bs_hdr_32.context_id);
     for (i = 0; i < h->meta_contexts.len; ++i)
       if (context_id == h->meta_contexts.ptr[i].context_id)
         break;
 
     if (i < h->meta_contexts.len) {
-      /* Call the caller's extent function. */
       int error = cmd->error;
+      const char *name = h->meta_contexts.ptr[i].name;
 
-      if (CALL_CALLBACK (cmd->cb.fn.extent,
-                         h->meta_contexts.ptr[i].name, cmd->offset,
-                         &h->bs_entries[1], count, &error) == -1)
+      /* Need to byte-swap the entries returned, but apart from that
+       * we don't validate them.  Yes, our 32-bit public API foolishly
+       * tracks the number of uint32_t instead of block descriptors;
+       * see _block_desc_is_multiple_of_bs_entry above.
+       */
+      for (i = 0; i < h->bs_count * 2; ++i)
+        h->bs_entries[i] = be32toh (h->bs_entries[i]);
+
+      /* Call the caller's extent function.  */
+      if (CALL_CALLBACK (cmd->cb.fn.extent, name, cmd->offset,
+                         h->bs_entries, h->bs_count * 2, &error) == -1)
         if (cmd->error == 0)
           cmd->error = error ? error : EPROTO;
     }
