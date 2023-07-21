@@ -41,15 +41,24 @@ STATE_MACHINE {
     return 0;
   }
 
-  h->request.magic = htobe32 (NBD_REQUEST_MAGIC);
-  h->request.flags = htobe16 (cmd->flags);
-  h->request.type = htobe16 (cmd->type);
-  h->request.cookie = htobe64 (cmd->cookie);
-  h->request.offset = htobe64 (cmd->offset);
-  h->request.count = htobe32 (cmd->count);
+  /* These fields are coincident between req.compact and req.extended */
+  h->req.compact.flags = htobe16 (cmd->flags);
+  h->req.compact.type = htobe16 (cmd->type);
+  h->req.compact.cookie = htobe64 (cmd->cookie);
+  h->req.compact.offset = htobe64 (cmd->offset);
+  if (h->extended_headers) {
+    h->req.extended.magic = htobe32 (NBD_EXTENDED_REQUEST_MAGIC);
+    h->req.extended.count = htobe64 (cmd->count);
+    h->wlen = sizeof (h->req.extended);
+  }
+  else {
+    assert (cmd->count <= UINT32_MAX);
+    h->req.compact.magic = htobe32 (NBD_REQUEST_MAGIC);
+    h->req.compact.count = htobe32 (cmd->count);
+    h->wlen = sizeof (h->req.compact);
+  }
   h->chunks_sent++;
-  h->wbuf = &h->request;
-  h->wlen = sizeof (h->request);
+  h->wbuf = &h->req;
   if (cmd->type == NBD_CMD_WRITE || cmd->next)
     h->wflags = MSG_MORE;
   SET_NEXT_STATE (%SEND_REQUEST);
@@ -74,7 +83,7 @@ STATE_MACHINE {
 
   assert (h->cmds_to_issue != NULL);
   cmd = h->cmds_to_issue;
-  assert (cmd->cookie == be64toh (h->request.cookie));
+  assert (cmd->cookie == be64toh (h->req.compact.cookie));
   if (cmd->type == NBD_CMD_WRITE) {
     h->wbuf = cmd->data;
     h->wlen = cmd->count;
@@ -120,7 +129,7 @@ STATE_MACHINE {
   assert (!h->wlen);
   assert (h->cmds_to_issue != NULL);
   cmd = h->cmds_to_issue;
-  assert (cmd->cookie == be64toh (h->request.cookie));
+  assert (cmd->cookie == be64toh (h->req.compact.cookie));
   h->cmds_to_issue = cmd->next;
   if (h->cmds_to_issue_tail == cmd)
     h->cmds_to_issue_tail = NULL;

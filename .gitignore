@@ -252,6 +252,7 @@ Makefile.in
 /tests/pki/
 /tests/pread-initialize
 /tests/private-data
+/tests/pwrite-extended
 /tests/read-only-flag
 /tests/read-write-flag
 /tests/server-death

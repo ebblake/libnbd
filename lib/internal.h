@@ -110,6 +110,9 @@ struct nbd_handle {
   char *tls_username;           /* Username, NULL = use current username */
   char *tls_psk_file;           /* PSK filename, NULL = no PSK */
 
+  /* Extended headers. */
+  bool extended_headers;        /* If we negotiated NBD_OPT_EXTENDED_HEADERS */
+
   /* Desired metadata contexts. */
   bool request_sr;
   bool request_meta;
@@ -273,7 +276,10 @@ struct nbd_handle {
   /* Issuing a command must use a buffer separate from sbuf, for the
    * case when we interrupt a request to service a reply.
    */
-  struct nbd_request request;
+  union {
+    struct nbd_request compact;
+    struct nbd_request_ext extended;
+  } req;
   bool in_write_payload;
   bool in_write_shutdown;
 
@@ -378,7 +384,7 @@ struct command {
   uint16_t type;
   uint64_t cookie;
   uint64_t offset;
-  uint32_t count;
+  uint64_t count;
   void *data; /* Buffer for read/write */
   struct command_cb cb;
   bool initialized; /* For read, true if getting a hole may skip memset */

@@ -34,7 +34,7 @@ structured_reply_in_bounds (uint64_t offset, uint32_t length,
       offset + length > cmd->offset + cmd->count) {
     set_error (0, "range of structured reply is out of bounds, "
                "offset=%" PRIu64 ", cmd->offset=%" PRIu64 ", "
-               "length=%" PRIu32 ", cmd->count=%" PRIu32 ": "
+               "length=%" PRIu32 ", cmd->count=%" PRIu64 ": "
                "this is likely to be a bug in the NBD server",
                offset, cmd->offset, length, cmd->count);
     return false;

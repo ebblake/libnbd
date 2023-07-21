@@ -233,6 +233,7 @@ check_PROGRAMS += \
 	closure-lifetimes \
 	pread-initialize \
 	socket-activation-name \
+	pwrite-extended \
 	$(NULL)
 
 TESTS += \
@@ -654,6 +655,9 @@ socket_activation_name_SOURCES = \
 	requires.c \
 	requires.h
 socket_activation_name_LDADD = $(top_builddir)/lib/libnbd.la
+
+pwrite_extended_SOURCES = pwrite-extended.c
+pwrite_extended_LDADD = $(top_builddir)/lib/libnbd.la
 
 #----------------------------------------------------------------------
 # Testing TLS support.

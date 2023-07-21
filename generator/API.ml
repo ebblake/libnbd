@@ -198,11 +198,12 @@ let cmd_flags = {
   flag_prefix = "CMD_FLAG";
   guard = Some "((h->strict & LIBNBD_STRICT_FLAGS) || flags > UINT16_MAX)";
   flags = [
-    "FUA",       1 lsl 0;
-    "NO_HOLE",   1 lsl 1;
-    "DF",        1 lsl 2;
-    "REQ_ONE",   1 lsl 3;
-    "FAST_ZERO", 1 lsl 4;
+    "FUA",         1 lsl 0;
+    "NO_HOLE",     1 lsl 1;
+    "DF",          1 lsl 2;
+    "REQ_ONE",     1 lsl 3;
+    "FAST_ZERO",   1 lsl 4;
+    "PAYLOAD_LEN", 1 lsl 5;
   ]
 }
 let handshake_flags = {
@@ -2507,7 +2508,7 @@ on failure."
   "pwrite", {
     default_call with
     args = [ BytesIn ("buf", "count"); UInt64 "offset" ];
-    optargs = [ OFlags ("flags", cmd_flags, Some ["FUA"]) ];
+    optargs = [ OFlags ("flags", cmd_flags, Some ["FUA"; "PAYLOAD_LEN"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
     shortdesc = "write to the NBD server";
@@ -2530,7 +2531,10 @@ The C<flags> parameter may be C<0> for no flags, or may contain
 C<LIBNBD_CMD_FLAG_FUA> meaning that the server should not
 return until the data has been committed to permanent storage
 (if that is supported - some servers cannot do this, see
-L<nbd_can_fua(3)>)."
+L<nbd_can_fua(3)>).  For convenience, libnbd ignores the presence
+or absence of the flag C<LIBNBD_CMD_FLAG_PAYLOAD_LEN> in C<flags>,
+while correctly using the flag over the wire according to whether
+extended headers were negotiated."
 ^ strict_call_description;
     see_also = [Link "can_fua"; Link "is_read_only";
                 Link "aio_pwrite"; Link "get_block_size";
@@ -3220,7 +3224,7 @@ Other parameters behave as documented in L<nbd_pread_structured(3)>."
     default_call with
     args = [ BytesPersistIn ("buf", "count"); UInt64 "offset" ];
     optargs = [ OClosure completion_closure;
-                OFlags ("flags", cmd_flags, Some ["FUA"]) ];
+                OFlags ("flags", cmd_flags, Some ["FUA"; "PAYLOAD_LEN"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
     shortdesc = "write to the NBD server";

@@ -223,13 +223,11 @@ nbd_internal_command_common (struct nbd_handle *h,
     }
     break;
 
-    /* Other commands are currently limited by the 32 bit field in the
-     * command structure on the wire, but in future we hope to support
-     * 64 bit values here with a change to the NBD protocol which is
-     * being discussed upstream.
+    /* Other commands are limited by the 32 bit field in the command
+     * structure on the wire, unless extended headers were negotiated.
      */
   default:
-    if (count > UINT32_MAX) {
+    if (!h->extended_headers && count > UINT32_MAX) {
       set_error (ERANGE, "request too large: maximum request size is %" PRIu32,
                  UINT32_MAX);
       goto err;
@@ -358,6 +356,15 @@ nbd_unlocked_aio_pwrite (struct nbd_handle *h, const void *buf,
       return -1;
     }
   }
+  /* It is more convenient to manage PAYLOAD_LEN by what was negotiated
+   * than to require the user to have to set it correctly.
+   * TODO: Add new h->strict bit to allow intentional protocol violation
+   * for interoperability testing.
+   */
+  if (h->extended_headers)
+    flags |= LIBNBD_CMD_FLAG_PAYLOAD_LEN;
+  else
+    flags &= ~LIBNBD_CMD_FLAG_PAYLOAD_LEN;
 
   SET_CALLBACK_TO_NULL (*completion);
   return nbd_internal_command_common (h, flags, NBD_CMD_WRITE, offset, count,
