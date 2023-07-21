@@ -304,6 +304,9 @@ struct nbd_handle {
   string_vector querylist;
   size_t querynum;
 
+  /* Chunk payload length remaining to be parsed */
+  size_t payload_left;
+
   /* When receiving block status, this is used. */
   uint32_t *bs_entries;
 

@@ -69,6 +69,7 @@ STATE_MACHINE {
   /* Skip an unexpected structured reply, including to an unknown cookie. */
   if (cmd == NULL || !h->structured_replies)
     goto resync;
+  h->payload_left = length;
 
   switch (type) {
   case NBD_REPLY_TYPE_NONE:
@@ -87,6 +88,7 @@ STATE_MACHINE {
       goto resync;
     h->rbuf = &h->sbuf.reply.payload.offset_data;
     h->rlen = sizeof h->sbuf.reply.payload.offset_data;
+    h->payload_left -= h->rlen;
     SET_NEXT_STATE (%RECV_OFFSET_DATA);
     break;
 
@@ -96,6 +98,7 @@ STATE_MACHINE {
       goto resync;
     h->rbuf = &h->sbuf.reply.payload.offset_hole;
     h->rlen = sizeof h->sbuf.reply.payload.offset_hole;
+    h->payload_left -= h->rlen;
     SET_NEXT_STATE (%RECV_OFFSET_HOLE);
     break;
 
@@ -141,7 +144,8 @@ STATE_MACHINE {
 
  resync:
   h->rbuf = NULL;
-  h->rlen = length;
+  h->rlen = h->payload_left;
+  h->payload_left = 0;
   SET_NEXT_STATE (%RESYNC);
   return 0;
 
@@ -156,7 +160,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
+    length = h->payload_left;
+    h->payload_left -= MIN (length, sizeof h->sbuf.reply.payload.error.error);
     assert (length >= sizeof h->sbuf.reply.payload.error.error.error);
     assert (cmd);
 
@@ -164,12 +169,13 @@ STATE_MACHINE {
       goto resync;
 
     msglen = be16toh (h->sbuf.reply.payload.error.error.len);
-    if (msglen > length - sizeof h->sbuf.reply.payload.error.error ||
+    if (msglen > h->payload_left ||
         msglen > sizeof h->sbuf.reply.payload.error.msg)
       goto resync;
 
     h->rbuf = h->sbuf.reply.payload.error.msg;
     h->rlen = msglen;
+    h->payload_left -= h->rlen;
     SET_NEXT_STATE (%RECV_ERROR_MESSAGE);
   }
   return 0;
@@ -180,12 +186,13 @@ STATE_MACHINE {
   if (cmd->error == 0)
     cmd->error = nbd_internal_errno_of_nbd_error (error);
   h->rbuf = NULL;
-  h->rlen = length - MIN (length, sizeof h->sbuf.reply.payload.error.error);
+  h->rlen = h->payload_left;
+  h->payload_left = 0;
   SET_NEXT_STATE (%RESYNC);
   return 0;
 
  REPLY.CHUNK_REPLY.RECV_ERROR_MESSAGE:
-  uint32_t length, msglen;
+  uint32_t msglen;
   uint16_t type;
 
   switch (recv_into_rbuf (h)) {
@@ -195,11 +202,8 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
     msglen = be16toh (h->sbuf.reply.payload.error.error.len);
     type = be16toh (h->sbuf.reply.hdr.structured.type);
-
-    length -= sizeof h->sbuf.reply.payload.error.error + msglen;
 
     if (msglen)
       debug (h, "structured error server message: %.*s", (int)msglen,
@@ -207,21 +211,22 @@ STATE_MACHINE {
 
     /* Special case two specific errors; silently ignore tail for all others */
     h->rbuf = NULL;
-    h->rlen = length;
+    h->rlen = h->payload_left;
     switch (type) {
     case NBD_REPLY_TYPE_ERROR:
-      if (length != 0)
+      if (h->payload_left != 0)
         debug (h, "ignoring unexpected slop after error message, "
                "the server may have a bug");
       break;
     case NBD_REPLY_TYPE_ERROR_OFFSET:
-      if (length != sizeof h->sbuf.reply.payload.error.offset)
+      if (h->payload_left != sizeof h->sbuf.reply.payload.error.offset)
         debug (h, "unable to safely extract error offset, "
                "the server may have a bug");
       else
         h->rbuf = &h->sbuf.reply.payload.error.offset;
       break;
     }
+    h->payload_left = 0;
     SET_NEXT_STATE (%RECV_ERROR_TAIL);
   }
   return 0;
@@ -286,7 +291,6 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.RECV_OFFSET_DATA:
   struct command *cmd = h->reply_cmd;
   uint64_t offset;
-  uint32_t length;
 
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
@@ -295,29 +299,24 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
     offset = be64toh (h->sbuf.reply.payload.offset_data.offset);
 
     assert (cmd); /* guaranteed by CHECK */
-
     assert (cmd->data && cmd->type == NBD_CMD_READ);
 
-    /* Length of the data following. */
-    length -= 8;
-
     /* Is the data within bounds? */
-    if (! structured_reply_in_bounds (offset, length, cmd)) {
+    if (! structured_reply_in_bounds (offset, h->payload_left, cmd)) {
       SET_NEXT_STATE (%.DEAD);
       return 0;
     }
     if (cmd->data_seen <= cmd->count)
-      cmd->data_seen += length;
+      cmd->data_seen += h->payload_left;
     /* Now this is the byte offset in the read buffer. */
     offset -= cmd->offset;
 
     /* Set up to receive the data directly to the user buffer. */
     h->rbuf = (char *)cmd->data + offset;
-    h->rlen = length;
+    h->rlen = h->payload_left;
     SET_NEXT_STATE (%RECV_OFFSET_DATA_DATA);
   }
   return 0;
@@ -325,7 +324,6 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.RECV_OFFSET_DATA_DATA:
   struct command *cmd = h->reply_cmd;
   uint64_t offset;
-  uint32_t length;
 
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
@@ -334,7 +332,6 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
     offset = be64toh (h->sbuf.reply.payload.offset_data.offset);
 
     assert (cmd); /* guaranteed by CHECK */
@@ -343,11 +340,12 @@ STATE_MACHINE {
 
       if (CALL_CALLBACK (cmd->cb.fn.chunk,
                          (char *)cmd->data + (offset - cmd->offset),
-                         length - sizeof offset, offset,
+                         h->payload_left, offset,
                          LIBNBD_READ_DATA, &error) == -1)
         if (cmd->error == 0)
           cmd->error = error ? error : EPROTO;
     }
+    h->payload_left = 0;
 
     SET_NEXT_STATE (%FINISH);
   }
@@ -369,7 +367,6 @@ STATE_MACHINE {
     length = be32toh (h->sbuf.reply.payload.offset_hole.length);
 
     assert (cmd); /* guaranteed by CHECK */
-
     assert (cmd->data && cmd->type == NBD_CMD_READ);
 
     /* Is the data within bounds? */
@@ -405,8 +402,8 @@ STATE_MACHINE {
 
  REPLY.CHUNK_REPLY.RECV_BS_ENTRIES:
   struct command *cmd = h->reply_cmd;
-  uint32_t length;
   size_t i;
+  size_t count;
   uint32_t context_id;
 
   switch (recv_into_rbuf (h)) {
@@ -416,20 +413,20 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
-
     assert (cmd); /* guaranteed by CHECK */
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
     assert (h->bs_entries);
-    assert (length >= 12);
+    assert (h->payload_left >= 12);
     assert (h->meta_valid);
 
     /* Need to byte-swap the entries returned, but apart from that we
      * don't validate them.
      */
-    for (i = 0; i < length/4; ++i)
+    for (i = 0; i < h->payload_left / sizeof *h->bs_entries; ++i)
       h->bs_entries[i] = be32toh (h->bs_entries[i]);
+    count = (h->payload_left / sizeof *h->bs_entries) - 1;
+    h->payload_left = 0;
 
     /* Look up the context ID. */
     context_id = h->bs_entries[0];
@@ -443,8 +440,7 @@ STATE_MACHINE {
 
       if (CALL_CALLBACK (cmd->cb.fn.extent,
                          h->meta_contexts.ptr[i].name, cmd->offset,
-                         &h->bs_entries[1], (length-4) / 4,
-                         &error) == -1)
+                         &h->bs_entries[1], count, &error) == -1)
         if (cmd->error == 0)
           cmd->error = error ? error : EPROTO;
     }
@@ -494,6 +490,7 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.FINISH:
   uint16_t flags;
 
+  assert (h->payload_left == 0);
   flags = be16toh (h->sbuf.reply.hdr.structured.flags);
   if (flags & NBD_REPLY_FLAG_DONE) {
     SET_NEXT_STATE (%^FINISH_COMMAND);
