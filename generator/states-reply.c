@@ -126,7 +126,25 @@ STATE_MACHINE {
  REPLY.RECV_REPLY:
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
-  case 1: SET_NEXT_STATE (%.READY); return 0;
+  case 1: SET_NEXT_STATE (%.READY);
+    /* Special case: if we have a short read, but got at least far
+     * enough to decode the magic number, we can check if the server
+     * is matching our expectations. This lets us avoid deadlocking if
+     * we are blocked waiting for a 32-byte extended reply, while a
+     * buggy server only sent a shorter simple or structured reply.
+     * Magic number checks here must be repeated in CHECK_REPLY_MAGIC,
+     * since we do not always encounter a short read.
+     */
+    if (h->extended_headers &&
+        (char *)h->rbuf >=
+        (char *)&h->sbuf.reply.hdr + sizeof h->sbuf.reply.hdr.magic) {
+      uint32_t magic = be32toh (h->sbuf.reply.hdr.magic);
+      if (magic != NBD_EXTENDED_REPLY_MAGIC) {
+        SET_NEXT_STATE (%.DEAD); /* We've probably lost synchronization. */
+        set_error (0, "invalid or unexpected reply magic 0x%" PRIx32, magic);
+      }
+    }
+    return 0;
   case 0: SET_NEXT_STATE (%CHECK_REPLY_MAGIC);
   }
   return 0;
