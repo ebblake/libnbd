@@ -244,6 +244,7 @@ struct nbd_handle {
       union reply_header {
         struct nbd_simple_reply simple;
         struct nbd_structured_reply structured;
+        struct nbd_extended_reply extended;
         /* The wire formats share magic and cookie at the same offsets;
          * provide aliases for one less level of typing.
          */

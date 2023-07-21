@@ -68,22 +68,30 @@ STATE_MACHINE {
    */
   ssize_t r;
 
-  /* We read all replies initially as if they are simple replies, but
-   * check the magic in CHECK_REPLY_MAGIC below.  This works because
-   * the structured_reply header is larger, and because the last
-   * member of a simple reply, cookie, is coincident between the two
-   * structs (an intentional design decision in the NBD spec when
-   * structured replies were added).
+  /* With extended headers, there is only one size to read, so we can
+   * do it all in one syscall.  But for older structured replies, we
+   * don't know if we have a simple or structured reply until we read
+   * the magic number, requiring a two-part read with
+   * CHECK_REPLY_MAGIC below.  This works because the structured_reply
+   * header is larger, and because the last member of a simple reply,
+   * cookie, is coincident between all three structs (intentional
+   * design decisions in the NBD spec when structured and extended
+   * replies were added).
    */
   ASSERT_MEMBER_ALIAS (union reply_header, simple.magic, magic);
   ASSERT_MEMBER_ALIAS (union reply_header, simple.cookie, cookie);
   ASSERT_MEMBER_ALIAS (union reply_header, structured.magic, magic);
   ASSERT_MEMBER_ALIAS (union reply_header, structured.cookie, cookie);
+  ASSERT_MEMBER_ALIAS (union reply_header, extended.magic, magic);
+  ASSERT_MEMBER_ALIAS (union reply_header, extended.cookie, cookie);
   assert (h->reply_cmd == NULL);
   assert (h->rlen == 0);
 
   h->rbuf = &h->sbuf.reply.hdr;
-  h->rlen = sizeof h->sbuf.reply.hdr.simple;
+  if (h->extended_headers)
+    h->rlen = sizeof h->sbuf.reply.hdr.extended;
+  else
+    h->rlen = sizeof h->sbuf.reply.hdr.simple;
 
   r = h->sock->ops->recv (h, h->sock, h->rbuf, h->rlen);
   if (r == -1) {
@@ -129,10 +137,25 @@ STATE_MACHINE {
   uint64_t cookie;
 
   magic = be32toh (h->sbuf.reply.hdr.magic);
-  if (magic == NBD_SIMPLE_REPLY_MAGIC) {
+  switch (magic) {
+  case NBD_SIMPLE_REPLY_MAGIC:
+    if (h->extended_headers)
+      /* Server is non-compliant, and we've already read more bytes
+       * than a simple header contains; no recovery possible
+       */
+      goto invalid;
+
+    /* All other payload checks handled in the simple payload engine */
     SET_NEXT_STATE (%SIMPLE_REPLY.START);
-  }
-  else if (magic == NBD_STRUCTURED_REPLY_MAGIC) {
+    break;
+
+  case NBD_STRUCTURED_REPLY_MAGIC:
+    if (h->extended_headers)
+      /* Server is non-compliant, and we've already read more bytes
+       * than a structured header contains; no recovery possible
+       */
+      goto invalid;
+
     /* We've only read the bytes that fill hdr.simple.  But
      * hdr.structured is longer, so prepare to read the remaining
      * bytes.  We depend on the memory aliasing in union sbuf to
@@ -145,23 +168,29 @@ STATE_MACHINE {
     h->rlen = sizeof h->sbuf.reply.hdr.structured;
     h->rlen -= sizeof h->sbuf.reply.hdr.simple;
     SET_NEXT_STATE (%RECV_STRUCTURED_REMAINING);
-  }
-  else {
-    /* We've probably lost synchronization. */
-    SET_NEXT_STATE (%.DEAD);
-    set_error (0, "invalid reply magic 0x%" PRIx32, magic);
-#if 0 /* uncomment to see desynchronized data */
-    nbd_internal_hexdump (&h->sbuf.reply.hdr.simple,
-                          sizeof (h->sbuf.reply.hdr.simple),
-                          stderr);
-#endif
-    return 0;
+    break;
+
+  case NBD_EXTENDED_REPLY_MAGIC:
+    if (!h->extended_headers)
+      /* Server is non-compliant.  We could continue reading bytes up
+       * to the length of an extended reply to regain sync, but old
+       * servers are unlikely to send this magic, so it's just as easy
+       * to punt.
+       */
+      goto invalid;
+
+    /* All other payload checks handled in the chunk payload engine */
+    SET_NEXT_STATE (%CHUNK_REPLY.START);
+    break;
+
+  default:
+    goto invalid;
   }
 
-  /* NB: This works for both simple and structured replies, even
-   * though we haven't finished reading the structured header yet,
-   * because the cookie is stored at the same offset.  See the
-   * STATIC_ASSERT above in state REPLY.START that confirmed this.
+  /* NB: This works for all three reply types, even though we haven't
+   * finished reading a structured header yet, because the cookie is
+   * stored at the same offset.  See the ASSERT_MEMBER_ALIAS above in
+   * state REPLY.START that confirmed this.
    */
   h->chunks_received++;
   cookie = be64toh (h->sbuf.reply.hdr.cookie);
@@ -173,6 +202,16 @@ STATE_MACHINE {
       break;
   }
   h->reply_cmd = cmd;
+  return 0;
+
+ invalid:
+  SET_NEXT_STATE (%.DEAD); /* We've probably lost synchronization. */
+  set_error (0, "invalid or unexpected reply magic 0x%" PRIx32, magic);
+#if 0 /* uncomment to see desynchronized data */
+  nbd_internal_hexdump (&h->sbuf.reply.hdr.simple,
+                        sizeof (h->sbuf.reply.hdr.simple),
+                        stderr);
+#endif
   return 0;
 
  REPLY.RECV_STRUCTURED_REMAINING:

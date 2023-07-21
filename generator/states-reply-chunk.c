@@ -69,11 +69,17 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.START:
   struct command *cmd = h->reply_cmd;
   uint16_t flags, type;
-  uint32_t length;
+  uint64_t length;
+  uint64_t offset = -1;
 
   flags = be16toh (h->sbuf.reply.hdr.structured.flags);
   type = be16toh (h->sbuf.reply.hdr.structured.type);
-  length = be32toh (h->sbuf.reply.hdr.structured.length);
+  if (h->extended_headers) {
+    length = be64toh (h->sbuf.reply.hdr.extended.length);
+    offset = be64toh (h->sbuf.reply.hdr.extended.offset);
+  }
+  else
+    length = be32toh (h->sbuf.reply.hdr.structured.length);
 
   /* Reject a server that replies with too much information, but don't
    * reject a single structured reply to NBD_CMD_READ on the largest
@@ -83,13 +89,14 @@ STATE_MACHINE {
    * not worth keeping the connection alive.
    */
   if (length > MAX_REQUEST_SIZE + sizeof h->sbuf.reply.payload.offset_data) {
-    set_error (0, "invalid server reply length %" PRIu32, length);
+    set_error (0, "invalid server reply length %" PRIu64, length);
     SET_NEXT_STATE (%.DEAD);
     return 0;
   }
 
   /* Skip an unexpected structured reply, including to an unknown cookie. */
-  if (cmd == NULL || !h->structured_replies)
+  if (cmd == NULL || !h->structured_replies ||
+      (h->extended_headers && offset != cmd->offset))
     goto resync;
   h->payload_left = length;
 
@@ -504,7 +511,8 @@ STATE_MACHINE {
  REPLY.CHUNK_REPLY.RESYNC:
   struct command *cmd = h->reply_cmd;
   uint16_t type;
-  uint32_t length;
+  uint64_t length;
+  uint64_t offset = -1;
 
   assert (h->rbuf == NULL);
   switch (recv_into_rbuf (h)) {
@@ -524,11 +532,23 @@ STATE_MACHINE {
       return 0;
     }
     type = be16toh (h->sbuf.reply.hdr.structured.type);
-    length = be32toh (h->sbuf.reply.hdr.structured.length);
-    debug (h, "unexpected reply type %u or payload length %" PRIu32
-           " for cookie %" PRIu64 " and command %" PRIu32
-           ", this is probably a server bug",
-           type, length, cmd->cookie, cmd->type);
+    if (h->extended_headers) {
+      length = be64toh (h->sbuf.reply.hdr.extended.length);
+      offset = be64toh (h->sbuf.reply.hdr.extended.offset);
+      if (offset != cmd->offset)
+        debug (h, "unexpected reply offset %" PRIu64 " for cookie %" PRIu64
+               " and command %" PRIu32 ", this is probably a server bug",
+               length, cmd->cookie, cmd->type);
+      else
+        offset = -1;
+    }
+    else
+      length = be32toh (h->sbuf.reply.hdr.structured.length);
+    if (offset == -1)
+      debug (h, "unexpected reply type %u or payload length %" PRIu64
+             " for cookie %" PRIu64 " and command %" PRIu32
+             ", this is probably a server bug",
+             type, length, cmd->cookie, cmd->type);
     if (cmd->error == 0)
       cmd->error = EPROTO;
     SET_NEXT_STATE (%FINISH);
