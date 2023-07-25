@@ -43,6 +43,7 @@ source_files = \
 	libnbd_405_pread_structured_test.go \
 	libnbd_410_pwrite_test.go \
 	libnbd_460_block_status_test.go \
+	libnbd_465_block_status_64_test.go \
 	libnbd_500_aio_pread_test.go \
 	libnbd_510_aio_pwrite_test.go \
 	libnbd_590_aio_copy_test.go \

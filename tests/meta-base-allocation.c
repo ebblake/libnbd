@@ -32,10 +32,13 @@
 
 #define BOGUS_CONTEXT "x-libnbd:nosuch"
 
-static int check_extent (void *data,
-                         const char *metacontext,
-                         uint64_t offset,
-                         uint32_t *entries, size_t nr_entries, int *error);
+static int check_extent32 (void *data, const char *metacontext,
+                           uint64_t offset,
+                           uint32_t *entries, size_t nr_entries, int *error);
+
+static int check_extent64 (void *data, const char *metacontext,
+                           uint64_t offset,
+                           nbd_extent *entries, size_t nr_entries, int *error);
 
 int
 main (int argc, char *argv[])
@@ -43,8 +46,10 @@ main (int argc, char *argv[])
   struct nbd_handle *nbd;
   char plugin_path[256];
   int id;
-  nbd_extent_callback extent_callback = { .callback = check_extent,
-                                          .user_data = &id };
+  nbd_extent_callback extent32_callback = { .callback = check_extent32,
+                                            .user_data = &id };
+  nbd_extent64_callback extent64_callback = { .callback = check_extent64,
+                                              .user_data = &id };
   int r;
   const char *s;
   char *tmp;
@@ -150,20 +155,33 @@ main (int argc, char *argv[])
 
   /* Read the block status. */
   id = 1;
-  if (nbd_block_status (nbd, 65536, 0, extent_callback, 0) == -1) {
+  if (nbd_block_status (nbd, 65536, 0, extent32_callback, 0) == -1) {
+    fprintf (stderr, "%s\n", nbd_get_error ());
+    exit (EXIT_FAILURE);
+  }
+  if (nbd_block_status_64 (nbd, 65536, 0, extent64_callback, 0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
 
   id = 2;
-  if (nbd_block_status (nbd, 1024, 32768-512, extent_callback, 0) == -1) {
+  if (nbd_block_status (nbd, 1024, 32768-512, extent32_callback, 0) == -1) {
+    fprintf (stderr, "%s\n", nbd_get_error ());
+    exit (EXIT_FAILURE);
+  }
+  if (nbd_block_status_64 (nbd, 1024, 32768-512, extent64_callback, 0) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
 
   id = 3;
-  if (nbd_block_status (nbd, 1024, 32768-512, extent_callback,
+  if (nbd_block_status (nbd, 1024, 32768-512, extent32_callback,
                         LIBNBD_CMD_FLAG_REQ_ONE) == -1) {
+    fprintf (stderr, "%s\n", nbd_get_error ());
+    exit (EXIT_FAILURE);
+  }
+  if (nbd_block_status_64 (nbd, 1024, 32768-512, extent64_callback,
+                           LIBNBD_CMD_FLAG_REQ_ONE) == -1) {
     fprintf (stderr, "%s\n", nbd_get_error ());
     exit (EXIT_FAILURE);
   }
@@ -178,10 +196,8 @@ main (int argc, char *argv[])
 }
 
 static int
-check_extent (void *data,
-              const char *metacontext,
-              uint64_t offset,
-              uint32_t *entries, size_t nr_entries, int *error)
+check_extent32 (void *data, const char *metacontext, uint64_t offset,
+                uint32_t *entries, size_t nr_entries, int *error)
 {
   size_t i;
   int id;
@@ -222,6 +238,68 @@ check_extent (void *data,
       assert (nr_entries == 2);
       assert (entries[0] == 512);   assert (entries[1] == (LIBNBD_STATE_HOLE|
                                                            LIBNBD_STATE_ZERO));
+      break;
+
+    default:
+      abort ();
+    }
+
+  }
+  else
+    fprintf (stderr, "warning: ignored unexpected meta context %s\n",
+             metacontext);
+
+  return 0;
+}
+
+static int
+check_extent64 (void *data, const char *metacontext, uint64_t offset,
+                nbd_extent *entries, size_t nr_entries, int *error)
+{
+  size_t i;
+  int id;
+
+  id = * (int *)data;
+
+  printf ("extent: id=%d, metacontext=%s, offset=%" PRIu64 ", "
+          "nr_entries=%zu, error=%d\n",
+          id, metacontext, offset, nr_entries, *error);
+
+  assert (*error == 0);
+  if (strcmp (metacontext, LIBNBD_CONTEXT_BASE_ALLOCATION) == 0) {
+    for (i = 0; i < nr_entries; i++) {
+      printf ("\t%zu\tlength=%" PRIu64 ", status=%" PRIu64 "\n",
+              i, entries[i].length, entries[i].flags);
+    }
+    fflush (stdout);
+
+    switch (id) {
+    case 1:
+      assert (nr_entries == 5);
+      assert (entries[0].length == 8192);
+      assert (entries[0].flags == 0);
+      assert (entries[1].length == 8192);
+      assert (entries[1].flags == LIBNBD_STATE_HOLE);
+      assert (entries[2].length == 16384);
+      assert (entries[2].flags == (LIBNBD_STATE_HOLE|LIBNBD_STATE_ZERO));
+      assert (entries[3].length == 16384);
+      assert (entries[3].flags == LIBNBD_STATE_ZERO);
+      assert (entries[4].length == 16384);
+      assert (entries[4].flags == 0);
+      break;
+
+    case 2:
+      assert (nr_entries == 2);
+      assert (entries[0].length == 512);
+      assert (entries[0].flags == (LIBNBD_STATE_HOLE|LIBNBD_STATE_ZERO));
+      assert (entries[1].length == 16384);
+      assert (entries[1].flags == LIBNBD_STATE_ZERO);
+      break;
+
+    case 3:
+      assert (nr_entries == 1);
+      assert (entries[0].length == 512);
+      assert (entries[0].flags == (LIBNBD_STATE_HOLE|LIBNBD_STATE_ZERO));
       break;
 
     default:

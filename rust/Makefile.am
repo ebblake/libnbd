@@ -58,6 +58,7 @@ source_files = \
 	tests/test_405_pread_structured.rs \
 	tests/test_410_pwrite.rs \
 	tests/test_460_block_status.rs \
+	tests/test_465_block_status_64.rs \
 	tests/test_620_stats.rs \
 	tests/test_log/mod.rs \
 	run-tests.sh.in \

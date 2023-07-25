@@ -40,6 +40,7 @@ ML_TESTS = \
 	test_405_pread_structured.ml \
 	test_410_pwrite.ml \
 	test_460_block_status.ml \
+	test_465_block_status_64.ml \
 	test_500_aio_pread.ml \
 	test_505_aio_pread_structured_callback.ml \
 	test_510_aio_pwrite.ml \
