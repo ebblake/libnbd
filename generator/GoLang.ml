@@ -366,8 +366,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
    | RErr ->
       pr "    return nil\n"
    | RBool ->
-      pr "    r := int (ret)\n";
-      pr "    if r != 0 { return true, nil } else { return false, nil }\n"
+      pr "    return int (ret) != 0, nil\n"
    | RStaticString ->
       pr "    /* ret is statically allocated, do not free it. */\n";
       pr "    r := C.GoString (ret);\n";
