@@ -183,7 +183,7 @@ type cookie = int64
       pr "val namespace_%s : string\n" ns;
       List.iter (
         fun (ctxt, consts) ->
-          pr "val context_%s_%s : string\n" ns ctxt;
+          pr "val context_%s_%s : string\n" ns (macro_name ctxt);
           List.iter (fun (n, _) ->
               pr "val %s : int32\n" (String.lowercase_ascii n)
           ) consts
@@ -315,7 +315,7 @@ let () =
       pr "let namespace_%s = \"%s:\"\n" ns ns;
       List.iter (
         fun (ctxt, consts) ->
-          pr "let context_%s_%s = \"%s:%s\"\n" ns ctxt ns ctxt;
+          pr "let context_%s_%s = \"%s:%s\"\n" ns (macro_name ctxt) ns ctxt;
           List.iter (fun (n, i) ->
               pr "let %s = %d_l\n" (String.lowercase_ascii n) i
           ) consts

@@ -46,6 +46,7 @@ val span : string -> string -> int
 val cspan : string -> string -> int
 val quote : string -> string
 val spaces : int -> string
+val macro_name : string -> string
 val files_equal : string -> string -> bool
 
 val generate_header :

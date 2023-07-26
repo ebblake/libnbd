@@ -3919,9 +3919,12 @@ let constants = [
 
 let metadata_namespaces = [
   "base", [ "allocation", [
-    "STATE_HOLE", 1 lsl 0;
-    "STATE_ZERO", 1 lsl 1;
-  ] ];
+              "STATE_HOLE", 1 lsl 0;
+              "STATE_ZERO", 1 lsl 1;
+          ] ];
+  "qemu", [ "dirty-bitmap:", [ "STATE_DIRTY", 1 lsl 0; ];
+            "allocation-depth", [];
+          ];
 ]
 
 let pod_of_link = function

@@ -151,6 +151,11 @@ let pr fs =
 
 let spaces n = String.make n ' '
 
+(* Convert s to macro name by changing '-' to '_' and eliding ':'. *)
+let macro_name s =
+  let underscore = Str.global_replace (Str.regexp_string "-") "_" s in
+  Str.global_replace (Str.regexp ":") "" underscore
+
 (* Save the current output channel and replace it with a temporary buffer while
  * running ‘code’.  Return the buffer.
  *)

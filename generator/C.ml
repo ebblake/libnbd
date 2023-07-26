@@ -373,13 +373,18 @@ let print_fndecl_and_define ?wrap name args optargs ret =
   pr "#define LIBNBD_HAVE_NBD_%s 1\n" name_upper;
   pr "\n"
 
-let print_ns_ctxt ns ns_upper ctxt consts =
-  let ctxt_upper = String.uppercase_ascii ctxt in
+let print_ns_ctxt ns ns_upper ctxt =
+  let ctxt_macro = macro_name ctxt in
+  let ctxt_upper = String.uppercase_ascii ctxt_macro in
   pr "#define LIBNBD_CONTEXT_%s_%s \"%s:%s\"\n"
-    ns_upper ctxt_upper ns ctxt;
-  pr "\n";
-  pr "/* \"%s:%s\" context related constants */\n" ns ctxt;
-  List.iter (fun (n, i) -> pr "#define LIBNBD_%-30s %d\n" n i) consts
+    ns_upper ctxt_upper ns ctxt
+
+let print_ns_ctxt_bits ns ctxt consts =
+  if consts <> [] then (
+    pr "\n";
+    pr "/* \"%s:%s\" context related constants */\n" ns ctxt;
+    List.iter (fun (n, i) -> pr "#define LIBNBD_%-30s %d\n" n i) consts
+  )
 
 let print_ns ns ctxts =
   let ns_upper = String.uppercase_ascii ns in
@@ -388,7 +393,10 @@ let print_ns ns ctxts =
   pr "\n";
   pr "/* \"%s\" namespace contexts */\n" ns;
   List.iter (
-    fun (ctxt, consts) -> print_ns_ctxt ns ns_upper ctxt consts
+    fun (ctxt, _) -> print_ns_ctxt ns ns_upper ctxt
+  ) ctxts;
+  List.iter (
+    fun (ctxt, consts) -> print_ns_ctxt_bits ns ctxt consts
   ) ctxts;
   pr "\n"
 

@@ -745,7 +745,8 @@ def nbd():
       pr "NAMESPACE_%s = \"%s:\"\n" ns_upper ns;
       List.iter (
         fun (ctxt, consts) ->
-          let ctxt_upper = String.uppercase_ascii ctxt in
+          let ctxt_macro = macro_name ctxt in
+          let ctxt_upper = String.uppercase_ascii ctxt_macro in
           pr "%s = \"%s:%s\"\n"
              (sprintf "CONTEXT_%s_%s" ns_upper ctxt_upper) ns ctxt;
           List.iter (fun (n, i) -> pr "%s = %d\n" n i) consts

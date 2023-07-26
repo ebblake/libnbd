@@ -127,8 +127,10 @@ main (int argc, char *argv[])
   nbd_extent_callback extent_callback = { .callback = cb, .user_data = &data };
   char c;
 
-  if (argc < 3) {
-    fprintf (stderr, "%s bitmap qemu-nbd [args ...]\n", argv[0]);
+  if (argc < 3 || strncmp (argv[1], LIBNBD_CONTEXT_QEMU_DIRTY_BITMAP,
+                           strlen (LIBNBD_CONTEXT_QEMU_DIRTY_BITMAP)) != 0) {
+    fprintf (stderr, "%s qemu:dirty-bitmap:name qemu-nbd [args ...]\n",
+             argv[0]);
     exit (EXIT_FAILURE);
   }
   bitmap = argv[1];

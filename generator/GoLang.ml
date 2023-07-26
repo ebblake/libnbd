@@ -472,7 +472,8 @@ const (
       pr "    namespace_%s = \"%s:\"\n" ns ns;
       List.iter (
         fun (ctxt, consts) ->
-          pr "    context_%s_%s = \"%s:%s\"\n" ns ctxt ns ctxt;
+          let ctxt_macro = macro_name ctxt in
+          pr "    context_%s_%s = \"%s:%s\"\n" ns ctxt_macro ns ctxt;
           List.iter (fun (n, v) ->
               pr "    %s uint32 = %d\n" n v
           ) consts
