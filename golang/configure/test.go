@@ -31,11 +31,11 @@ func main() {
 	fmt.Println(runtime.Version())
 
 	/* XXX Check for minimum runtime.Version() >= "go1.1.1"
-         * Unfortunately go version numbers are not easy to parse.
-         * They have the 3 formats "goX.Y.Z", "release.rN" or
-         * "weekly.YYYY-MM-DD".  The latter two formats are mostly
-         * useless, and the first one is hard to parse.  See also
-         * cmpGoVersion in
-         * http://web.archive.org/web/20130402235148/http://golang.org/src/cmd/go/get.go?m=text
-         */
+	 * Unfortunately go version numbers are not easy to parse.
+	 * They have the 3 formats "goX.Y.Z", "release.rN" or
+	 * "weekly.YYYY-MM-DD".  The latter two formats are mostly
+	 * useless, and the first one is hard to parse.  See also
+	 * cmpGoVersion in
+	 * http://web.archive.org/web/20130402235148/http://golang.org/src/cmd/go/get.go?m=text
+	 */
 }

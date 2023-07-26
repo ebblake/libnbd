@@ -28,7 +28,7 @@ func listmetaqf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	listq_count++
-	if (name == CONTEXT_BASE_ALLOCATION) {
+	if name == CONTEXT_BASE_ALLOCATION {
 		listq_seen = true
 	}
 	return 0
@@ -64,9 +64,9 @@ func Test245OptListMetaQueries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
-	r, err := h.OptListMetaContextQueries([]string{ },
+	r, err := h.OptListMetaContextQueries([]string{},
 		func(name string) int {
-	        return listmetaqf(42, name)
+			return listmetaqf(42, name)
 		})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context_queries: %s", err)
@@ -82,9 +82,9 @@ func Test245OptListMetaQueries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
-	r, err = h.OptListMetaContextQueries([]string{ "x-nosuch:" },
+	r, err = h.OptListMetaContextQueries([]string{"x-nosuch:"},
 		func(name string) int {
-	        return listmetaqf(42, name)
+			return listmetaqf(42, name)
 		})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context_queries: %s", err)
@@ -97,9 +97,9 @@ func Test245OptListMetaQueries(t *testing.T) {
 	listq_count = 0
 	listq_seen = false
 	r, err = h.OptListMetaContextQueries([]string{
-		"x-nosuch:", CONTEXT_BASE_ALLOCATION },
+		"x-nosuch:", CONTEXT_BASE_ALLOCATION},
 		func(name string) int {
-	        return listmetaqf(42, name)
+			return listmetaqf(42, name)
 		})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context_queries: %s", err)

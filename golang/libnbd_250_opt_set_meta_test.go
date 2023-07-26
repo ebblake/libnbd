@@ -28,7 +28,7 @@ func setmetaf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	set_count++
-	if (name == CONTEXT_BASE_ALLOCATION) {
+	if name == CONTEXT_BASE_ALLOCATION {
 		set_seen = true
 	}
 	return 0

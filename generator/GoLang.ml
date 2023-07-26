@@ -175,6 +175,7 @@ let print_callback_wrapper { cbname; cbargs } =
 let print_binding (name, { args; optargs; ret; shortdesc }) =
   let cname = camel_case name in
 
+  pr "\n";
   (* Tedious method of passing optional arguments in golang. *)
   if optargs <> [] then (
     pr "/* Struct carrying optional arguments for %s. */\n" cname;
@@ -182,10 +183,10 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
     List.iter (
       fun optarg ->
         let fname = go_name_of_optarg optarg in
-        pr "  /* %s field is ignored unless %sSet == true. */\n"
+        pr "    /* %s field is ignored unless %sSet == true. */\n"
           fname fname;
-        pr "  %sSet bool\n" fname;
-        pr "  %s " fname;
+        pr "    %sSet bool\n" fname;
+        pr "    %s    " fname;
         (match optarg with
          | OClosure { cbname } -> pr "%sCallback" (camel_case cbname)
          | OFlags (_, {flag_prefix}, _) -> pr "%s" (camel_case flag_prefix)
@@ -198,7 +199,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
 
   (* Define the golang function which calls the C wrapper. *)
   pr "/* %s: %s */\n" cname shortdesc;
-  pr "func (h *Libnbd) %s (" cname;
+  pr "func (h *Libnbd) %s(" cname;
   let comma = ref false in
   List.iter (
     fun arg ->
@@ -219,8 +220,8 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
   pr " {\n";
   pr "    if h.h == nil {\n";
   (match go_ret_error ret with
-   | None -> pr "        return closed_handle_error (\"%s\")\n" name
-   | Some v -> pr "        return %s, closed_handle_error (\"%s\")\n" v name
+   | None -> pr "        return closed_handle_error(\"%s\")\n" name
+   | Some v -> pr "        return %s, closed_handle_error(\"%s\")\n" v name
   );
   pr "    }\n";
   pr "\n";
@@ -228,19 +229,19 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
   List.iter (
     function
     | Bool n ->
-       pr "    c_%s := C.bool (%s)\n" n n
+       pr "    c_%s := C.bool(%s)\n" n n
     | BytesIn (n, len) ->
-       pr "    c_%s := unsafe.Pointer (&%s[0])\n" n n;
-       pr "    c_%s := C.size_t (len (%s))\n" len n;
+       pr "    c_%s := unsafe.Pointer(&%s[0])\n" n n;
+       pr "    c_%s := C.size_t(len(%s))\n" len n;
     | BytesOut (n, len) ->
-       pr "    c_%s := unsafe.Pointer (&%s[0])\n" n n;
-       pr "    c_%s := C.size_t (len (%s))\n" len n;
+       pr "    c_%s := unsafe.Pointer(&%s[0])\n" n n;
+       pr "    c_%s := C.size_t(len(%s))\n" len n;
     | BytesPersistIn (n, len) ->
        pr "    c_%s := %s.P\n" n n;
-       pr "    c_%s := C.size_t (%s.Size)\n" len n;
+       pr "    c_%s := C.size_t(%s.Size)\n" len n;
     | BytesPersistOut (n, len) ->
        pr "    c_%s := %s.P\n" n n;
-       pr "    c_%s := C.size_t (%s.Size)\n" len n;
+       pr "    c_%s := C.size_t(%s.Size)\n" len n;
     | Closure { cbname } ->
        pr "    var c_%s C.nbd_%s_callback\n" cbname cbname;
        pr "    c_%s.callback = (*[0]byte)(C._nbd_%s_callback_wrapper)\n"
@@ -250,38 +251,38 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
        pr "    %s_cbid := registerCallbackId(%s)\n" cbname cbname;
        pr "    c_%s.user_data = C.alloc_cbid(C.long(%s_cbid))\n" cbname cbname
     | Enum (n, _) ->
-       pr "    c_%s := C.int (%s)\n" n n
+       pr "    c_%s := C.int(%s)\n" n n
     | Fd n ->
-       pr "    c_%s := C.int (%s)\n" n n
+       pr "    c_%s := C.int(%s)\n" n n
     | Flags (n, _) ->
-       pr "    c_%s := C.uint32_t (%s)\n" n n
+       pr "    c_%s := C.uint32_t(%s)\n" n n
     | Int n ->
-       pr "    c_%s := C.int (%s)\n" n n
+       pr "    c_%s := C.int(%s)\n" n n
     | Int64 n ->
-       pr "    c_%s := C.int64_t (%s)\n" n n
+       pr "    c_%s := C.int64_t(%s)\n" n n
     | Path n ->
-       pr "    c_%s := C.CString (%s)\n" n n;
-       pr "    defer C.free (unsafe.Pointer (c_%s))\n" n
+       pr "    c_%s := C.CString(%s)\n" n n;
+       pr "    defer C.free(unsafe.Pointer(c_%s))\n" n
     | SizeT n ->
-       pr "    c_%s := C.size_t (%s)\n" n n
+       pr "    c_%s := C.size_t(%s)\n" n n
     | SockAddrAndLen (n, len) ->
-       pr "    panic (\"SockAddrAndLen not supported\")\n";
+       pr "    panic(\"SockAddrAndLen not supported\")\n";
        pr "    var c_%s *C.struct_sockaddr\n" n;
        pr "    var c_%s C.uint\n" len
     | String n ->
-       pr "    c_%s := C.CString (%s)\n" n n;
-       pr "    defer C.free (unsafe.Pointer (c_%s))\n" n
+       pr "    c_%s := C.CString(%s)\n" n n;
+       pr "    defer C.free(unsafe.Pointer(c_%s))\n" n
     | StringList n ->
-       pr "    c_%s := arg_string_list (%s)\n" n n;
-       pr "    defer free_string_list (c_%s)\n" n
+       pr "    c_%s := arg_string_list(%s)\n" n n;
+       pr "    defer free_string_list(c_%s)\n" n
     | UInt n ->
-       pr "    c_%s := C.uint (%s)\n" n n
+       pr "    c_%s := C.uint(%s)\n" n n
     | UInt32 n ->
-       pr "    c_%s := C.uint32_t (%s)\n" n n
+       pr "    c_%s := C.uint32_t(%s)\n" n n
     | UInt64 n ->
-       pr "    c_%s := C.uint64_t (%s)\n" n n
+       pr "    c_%s := C.uint64_t(%s)\n" n n
     | UIntPtr n ->
-       pr "    c_%s := C.uintptr_t (%s)\n" n n
+       pr "    c_%s := C.uintptr_t(%s)\n" n n
   ) args;
   if optargs <> [] then (
     List.iter (
@@ -305,7 +306,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
              pr "            c_%s.user_data = C.alloc_cbid(C.long(%s_cbid))\n"
                cbname cbname
           | OFlags (n, _, _) ->
-             pr "            c_%s = C.uint32_t (optargs.%s)\n"
+             pr "            c_%s = C.uint32_t(optargs.%s)\n"
                n (go_name_of_optarg optarg);
          );
          pr "        }\n";
@@ -313,7 +314,7 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
     pr "    }\n";
   );
   pr "\n";
-  pr "    ret := C._nbd_%s_wrapper (&c_err, h.h" name;
+  pr "    ret := C._nbd_%s_wrapper(&c_err, h.h" name;
   List.iter (
     function
     | Bool n -> pr ", c_%s" n
@@ -347,15 +348,15 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
    * function has completed, in case all other references
    * to the handle have disappeared and the finalizer would run.
    *)
-  pr "    runtime.KeepAlive (h.h)\n";
+  pr "    runtime.KeepAlive(h.h)\n";
 
   let errcode = go_ret_c_errcode ret in
   (match errcode with
    | None -> ()
    | Some errcode ->
       pr "    if ret == %s {\n" errcode;
-      pr "        err := get_error (\"%s\", c_err)\n" name;
-      pr "        C.free_error (&c_err)\n";
+      pr "        err := get_error(\"%s\", c_err)\n" name;
+      pr "        C.free_error(&c_err)\n";
       (match go_ret_error ret with
        | None -> pr "        return err\n"
        | Some v -> pr "        return %s, err\n" v
@@ -366,38 +367,37 @@ let print_binding (name, { args; optargs; ret; shortdesc }) =
    | RErr ->
       pr "    return nil\n"
    | RBool ->
-      pr "    return int (ret) != 0, nil\n"
+      pr "    return int(ret) != 0, nil\n"
    | RStaticString ->
       pr "    /* ret is statically allocated, do not free it. */\n";
-      pr "    r := C.GoString (ret);\n";
+      pr "    r := C.GoString(ret)\n";
       pr "    return &r, nil\n"
    | RFd ->
-      pr "    return int (ret), nil\n"
+      pr "    return int(ret), nil\n"
    | RInt ->
-      pr "    return uint (ret), nil\n"
+      pr "    return uint(ret), nil\n"
    | RInt64 ->
-      pr "    return uint64 (ret), nil\n"
+      pr "    return uint64(ret), nil\n"
    | RCookie ->
-      pr "    return uint64 (ret), nil\n"
+      pr "    return uint64(ret), nil\n"
    | RSizeT ->
-      pr "    return uint (ret), nil\n"
+      pr "    return uint(ret), nil\n"
    | RString ->
-      pr "    r := C.GoString (ret)\n";
-      pr "    C.free (unsafe.Pointer (ret))\n";
+      pr "    r := C.GoString(ret)\n";
+      pr "    C.free(unsafe.Pointer(ret))\n";
       pr "    return &r, nil\n"
    | RUInt ->
-      pr "    return uint (ret), nil\n"
+      pr "    return uint(ret), nil\n"
    | RUIntPtr ->
-      pr "    return uint (ret), nil\n"
+      pr "    return uint(ret), nil\n"
    | RUInt64 ->
-      pr "    return uint64 (ret), nil\n"
+      pr "    return uint64(ret), nil\n"
    | REnum { enum_prefix } ->
-      pr "    return %s (ret), nil\n" (camel_case enum_prefix)
+      pr "    return %s(ret), nil\n" (camel_case enum_prefix)
    | RFlags { flag_prefix } ->
-      pr "    return %s (ret), nil\n" (camel_case flag_prefix)
+      pr "    return %s(ret), nil\n" (camel_case flag_prefix)
   );
-  pr "}\n";
-  pr "\n"
+  pr "}\n"
 
 let generate_golang_bindings_go () =
   generate_header CStyle;
@@ -431,6 +431,7 @@ import (
   List.iter (
     fun { enum_prefix; enums } ->
       pr "type %s int\n" (camel_case enum_prefix);
+      pr "\n";
       pr "const (\n";
       List.iter (
         fun (enum, v) ->
@@ -448,6 +449,7 @@ import (
       let flag_type = camel_case flag_prefix in
       let mask = ref 0 in
       pr "type %s uint32\n" flag_type;
+      pr "\n";
       pr "const (\n";
       List.iter (
         fun (flag, v) ->
@@ -483,7 +485,7 @@ const (
       ) ctxts;
   ) metadata_namespaces;
 
-  pr ")\n\n";
+  pr ")\n";
 
   (* Bindings. *)
   List.iter print_binding handle_calls
@@ -509,8 +511,8 @@ import \"unsafe\"
 
 /* Closures. */
 
-func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
-    ret := make([]uint32, int (count))
+func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
+    ret := make([]uint32, int(count))
     // See https://github.com/golang/go/wiki/cgo#turning-c-arrays-into-go-slices
     // TODO: Use unsafe.Slice() when we require Go 1.17.
     s := (*[1<<30]uint32)(unsafe.Pointer(entries))[:count:count]
@@ -522,7 +524,8 @@ func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
   List.iter (
     fun { cbname; cbargs } ->
       let uname = camel_case cbname in
-      pr "type %sCallback func (" uname;
+      pr "\n";
+      pr "type %sCallback func(" uname;
       let comma = ref false in
       List.iter (
         fun cbarg ->
@@ -549,7 +552,7 @@ func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
       pr ") int\n";
       pr "\n";
       pr "//export %s_callback\n" cbname;
-      pr "func %s_callback (callbackid *C.long" cbname;
+      pr "func %s_callback(callbackid *C.long" cbname;
       List.iter (
         fun cbarg ->
           pr ", ";
@@ -573,10 +576,10 @@ func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
           | CBArrayAndLen _ | CBMutable _ -> assert false
       ) cbargs;
       pr ") C.int {\n";
-      pr "    callbackFunc := getCallbackId (int (*callbackid));\n";
-      pr "    callback, ok := callbackFunc.(%sCallback);\n" uname;
+      pr "    callbackFunc := getCallbackId(int(*callbackid))\n";
+      pr "    callback, ok := callbackFunc.(%sCallback)\n" uname;
       pr "    if !ok {\n";
-      pr "        panic (\"inappropriate callback type\");\n";
+      pr "        panic(\"inappropriate callback type\")\n";
       pr "    }\n";
 
       (* Deal with mutable int by creating a local variable
@@ -586,30 +589,30 @@ func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
         fun cbarg ->
           match cbarg with
           | CBMutable (Int n) ->
-             pr "    go_%s := int (*%s)\n" n n
+             pr "    go_%s := int(*%s)\n" n n
           | _ -> ()
       ) cbargs;
 
-      pr "    ret := callback (";
+      pr "    ret := callback(";
       let comma = ref false in
       List.iter (
         fun cbarg ->
           if !comma then pr ", "; comma := true;
           match cbarg with
           | CBArrayAndLen (UInt32 n, count) ->
-             pr "copy_uint32_array (%s, %s)" n count
+             pr "copy_uint32_array(%s, %s)" n count
           | CBBytesIn (n, len) ->
-             pr "C.GoBytes (%s, C.int (%s))" n len
+             pr "C.GoBytes(%s, C.int(%s))" n len
           | CBInt n ->
-             pr "int (%s)" n
+             pr "int(%s)" n
           | CBUInt n ->
-             pr "uint (%s)" n
+             pr "uint(%s)" n
           | CBInt64 n ->
-             pr "int64 (%s)" n
+             pr "int64(%s)" n
           | CBString n ->
-             pr "C.GoString (%s)" n
+             pr "C.GoString(%s)" n
           | CBUInt64 n ->
-             pr "uint64 (%s)" n
+             pr "uint64(%s)" n
           | CBMutable (Int n) ->
              pr "&go_%s" n
           | CBArrayAndLen _ | CBMutable _ -> assert false
@@ -620,12 +623,11 @@ func copy_uint32_array (entries *C.uint32_t, count C.size_t) []uint32 {
         fun cbarg ->
           match cbarg with
           | CBMutable (Int n) ->
-             pr "    *%s = C.int (go_%s)\n" n n
+             pr "    *%s = C.int(go_%s)\n" n n
           | _ -> ()
       ) cbargs;
-      pr "    return C.int (ret);\n";
-      pr "}\n";
-      pr "\n"
+      pr "    return C.int(ret)\n";
+      pr "}\n"
   ) all_closures
 
 let generate_golang_wrappers_go () =

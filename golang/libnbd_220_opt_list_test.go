@@ -19,10 +19,10 @@
 package libnbd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"testing"
-	"fmt"
 )
 
 var exports []string
@@ -94,7 +94,7 @@ func Test220OptList(t *testing.T) {
 		if count != 2 {
 			t.Fatalf("unexpected count after opt_list")
 		}
-		if len(exports) != 2  || exports[0] != "a" || exports[1] != "b" {
+		if len(exports) != 2 || exports[0] != "a" || exports[1] != "b" {
 			t.Fatalf("unexpected exports contents after opt_list")
 		}
 	})

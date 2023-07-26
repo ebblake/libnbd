@@ -28,7 +28,7 @@ func setmetaqf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	setq_count++
-	if (name == CONTEXT_BASE_ALLOCATION) {
+	if name == CONTEXT_BASE_ALLOCATION {
 		setq_seen = true
 	}
 	return 0
@@ -101,7 +101,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	r, err = h.OptSetMetaContextQueries([]string{
 		"x-nosuch:context", CONTEXT_BASE_ALLOCATION},
 		func(name string) int {
-	        return setmetaqf(42, name)
+			return setmetaqf(42, name)
 		})
 	if err != nil {
 		t.Fatalf("could not request opt_set_meta_context_queries: %s", err)

@@ -36,8 +36,7 @@
 //
 // Example:
 //
-//   ./aio_copy nbd+unix:///?socket=/tmp.nbd >/dev/null
-//
+//	./aio_copy nbd+unix:///?socket=/tmp.nbd >/dev/null
 package main
 
 import (
@@ -66,8 +65,8 @@ var (
 // libnbd, until the command reach the front of the queue and can be writen to
 // the output.
 type command struct {
-	buf    libnbd.AioBuffer
-	ready  bool
+	buf   libnbd.AioBuffer
+	ready bool
 }
 
 func main() {
