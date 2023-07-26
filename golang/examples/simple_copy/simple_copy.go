@@ -36,8 +36,7 @@
 //
 // Example:
 //
-//   ./simple_copy nbd+unix:///?socket=/tmp.nbd >/dev/null
-//
+//	./simple_copy nbd+unix:///?socket=/tmp.nbd >/dev/null
 package main
 
 import (

@@ -26,7 +26,7 @@ import "testing"
 var expected405 = make([]byte, 512)
 
 func psf(user_data int, buf2 []byte, offset uint64, status uint,
-         error *int) int {
+	error *int) int {
 	if user_data != 42 {
 		panic("expected user_data == 42")
 	}
@@ -68,10 +68,10 @@ func Test405PReadStructured(t *testing.T) {
 
 	buf := make([]byte, 512)
 	err = h.PreadStructured(buf, 0,
-	      			func(buf2 []byte, offset uint64, status uint,
-				     error *int) int {
-				     return psf(42, buf2, offset, status, error)
-				}, nil)
+		func(buf2 []byte, offset uint64, status uint,
+			error *int) int {
+			return psf(42, buf2, offset, status, error)
+		}, nil)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}

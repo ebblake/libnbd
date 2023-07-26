@@ -19,7 +19,7 @@
 package libnbd
 
 import (
-	"fmt";
+	"fmt"
 	"testing"
 )
 
@@ -31,7 +31,7 @@ func listmetaf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	list_count++
-	if (name == CONTEXT_BASE_ALLOCATION) {
+	if name == CONTEXT_BASE_ALLOCATION {
 		list_seen = true
 	}
 	return 0
@@ -62,7 +62,7 @@ func Test240OptListMeta(t *testing.T) {
 	list_count = 0
 	list_seen = false
 	r, err := h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
@@ -80,7 +80,7 @@ func Test240OptListMeta(t *testing.T) {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
@@ -111,7 +111,7 @@ func Test240OptListMeta(t *testing.T) {
 		t.Fatalf("wrong result of get_meta_context: %s", *tmp)
 	}
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
@@ -121,7 +121,7 @@ func Test240OptListMeta(t *testing.T) {
 	}
 
 	/* Fourth pass: opt_list_meta_context is stateless, so it should
-     * not wipe status learned during opt_info
+	 * not wipe status learned during opt_info
 	 */
 	list_count = 0
 	list_seen = false
@@ -137,13 +137,13 @@ func Test240OptListMeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opt_info failed unexpectedly: %s", err)
 	}
-        size, err := h.GetSize()
+	size, err := h.GetSize()
 	if err != nil {
 		t.Fatalf("get_size failed unexpectedly: %s", err)
 	}
-        if size != 1048576 {
+	if size != 1048576 {
 		t.Fatalf("get_size gave wrong size")
-        }
+	}
 	meta, err := h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta_context failed unexpectedly: %s", err)
@@ -160,7 +160,7 @@ func Test240OptListMeta(t *testing.T) {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
@@ -168,13 +168,13 @@ func Test240OptListMeta(t *testing.T) {
 	if r != 0 || r != list_count || list_seen {
 		t.Fatalf("unexpected count after opt_list_meta_context")
 	}
-        size, err = h.GetSize()
+	size, err = h.GetSize()
 	if err != nil {
 		t.Fatalf("get_size failed unexpectedly: %s", err)
 	}
-        if size != 1048576 {
+	if size != 1048576 {
 		t.Fatalf("get_size gave wrong size")
-        }
+	}
 	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta_context failed unexpectedly: %s", err)
@@ -192,7 +192,7 @@ func Test240OptListMeta(t *testing.T) {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
@@ -241,7 +241,7 @@ func Test240OptListMeta(t *testing.T) {
 	list_count = 0
 	list_seen = false
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		bytes2, err2 := h.StatsBytesSent()
@@ -268,7 +268,7 @@ func Test240OptListMeta(t *testing.T) {
 	list_count = 0
 	list_seen = false
 	r, err = h.OptListMetaContext(func(name string) int {
-	        return listmetaf(42, name)
+		return listmetaf(42, name)
 	})
 	if err != nil {
 		t.Fatalf("could not request opt_list_meta_context: %s", err)
