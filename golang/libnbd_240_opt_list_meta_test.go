@@ -31,7 +31,7 @@ func listmetaf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	list_count++
-	if (name == context_base_allocation) {
+	if (name == CONTEXT_BASE_ALLOCATION) {
 		list_seen = true
 	}
 	return 0
@@ -92,7 +92,7 @@ func Test240OptListMeta(t *testing.T) {
 	/* Third pass: specific query should have one match. */
 	list_count = 0
 	list_seen = false
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
@@ -107,7 +107,7 @@ func Test240OptListMeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request get_meta_context: %s", err)
 	}
-	if *tmp != context_base_allocation {
+	if *tmp != CONTEXT_BASE_ALLOCATION {
 		t.Fatalf("wrong result of get_meta_context: %s", *tmp)
 	}
 	r, err = h.OptListMetaContext(func(name string) int {
@@ -129,7 +129,7 @@ func Test240OptListMeta(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -144,7 +144,7 @@ func Test240OptListMeta(t *testing.T) {
         if size != 1048576 {
 		t.Fatalf("get_size gave wrong size")
         }
-	meta, err := h.CanMetaContext(context_base_allocation)
+	meta, err := h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta_context failed unexpectedly: %s", err)
 	}
@@ -175,7 +175,7 @@ func Test240OptListMeta(t *testing.T) {
         if size != 1048576 {
 		t.Fatalf("get_size gave wrong size")
         }
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta_context failed unexpectedly: %s", err)
 	}
@@ -187,7 +187,7 @@ func Test240OptListMeta(t *testing.T) {
 	/* Final pass: "base:" query should get at least "base:allocation" */
 	list_count = 0
 	list_seen = false
-	err = h.AddMetaContext("base:")
+	err = h.AddMetaContext(NAMESPACE_BASE)
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}

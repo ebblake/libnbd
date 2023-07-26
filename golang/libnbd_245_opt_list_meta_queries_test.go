@@ -28,7 +28,7 @@ func listmetaqf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	listq_count++
-	if (name == context_base_allocation) {
+	if (name == CONTEXT_BASE_ALLOCATION) {
 		listq_seen = true
 	}
 	return 0
@@ -97,7 +97,7 @@ func Test245OptListMetaQueries(t *testing.T) {
 	listq_count = 0
 	listq_seen = false
 	r, err = h.OptListMetaContextQueries([]string{
-		"x-nosuch:", context_base_allocation },
+		"x-nosuch:", CONTEXT_BASE_ALLOCATION },
 		func(name string) int {
 	        return listmetaqf(42, name)
 		})

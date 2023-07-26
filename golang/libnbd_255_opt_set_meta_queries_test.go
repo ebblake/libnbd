@@ -28,7 +28,7 @@ func setmetaqf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	setq_count++
-	if (name == context_base_allocation) {
+	if (name == CONTEXT_BASE_ALLOCATION) {
 		setq_seen = true
 	}
 	return 0
@@ -74,7 +74,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	 */
 	setq_count = 0
 	setq_seen = false
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
@@ -87,7 +87,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	if r != setq_count || r != 0 || setq_seen {
 		t.Fatalf("unexpected set_count after opt_set_meta_context_queries")
 	}
-	meta, err := h.CanMetaContext(context_base_allocation)
+	meta, err := h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
@@ -99,7 +99,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	setq_count = 0
 	setq_seen = false
 	r, err = h.OptSetMetaContextQueries([]string{
-		"x-nosuch:context", context_base_allocation},
+		"x-nosuch:context", CONTEXT_BASE_ALLOCATION},
 		func(name string) int {
 	        return setmetaqf(42, name)
 		})
@@ -109,7 +109,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	if r != 1 || r != setq_count || !setq_seen {
 		t.Fatalf("unexpected set_count after opt_set_meta_context_queries")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
@@ -126,7 +126,7 @@ func Test255OptSetMetaQueries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request opt_go: %s", err)
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}

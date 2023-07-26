@@ -45,7 +45,7 @@ func Test230OptInfo(t *testing.T) {
 		t.Fatalf("could not connect: %s", err)
 	}
 
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not add meta context: %s", err)
 	}
@@ -59,7 +59,7 @@ func Test230OptInfo(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -83,7 +83,7 @@ func Test230OptInfo(t *testing.T) {
 	if !ro {
 		t.Fatalf("unexpected readonly")
 	}
-	meta, err := h.CanMetaContext(context_base_allocation)
+	meta, err := h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta failed unexpectedly: %s", err)
 	}
@@ -104,7 +104,7 @@ func Test230OptInfo(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -151,7 +151,7 @@ func Test230OptInfo(t *testing.T) {
 	if ro {
 		t.Fatalf("unexpected readonly")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -177,7 +177,7 @@ func Test230OptInfo(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -205,7 +205,7 @@ func Test230OptInfo(t *testing.T) {
 	if !ro {
 		t.Fatalf("unexpected readonly")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta failed unexpectedly: %s", err)
 	}
@@ -236,7 +236,7 @@ func Test230OptInfo(t *testing.T) {
 	if size != 4 {
 		t.Fatalf("unexpected size")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta failed unexpectedly: %s", err)
 	}
@@ -270,7 +270,7 @@ func Test230OptInfo(t *testing.T) {
 		t.Fatalf("could not add meta context: %s", err)
 	}
 
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -278,7 +278,7 @@ func Test230OptInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opt_info failed unexpectedly: %s", err)
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta failed unexpectedly: %s", err)
 	}
@@ -290,7 +290,7 @@ func Test230OptInfo(t *testing.T) {
 		t.Fatalf("set request meta context failed unexpectedly: %s", err)
 	}
 	/* Adding to the request list now won't matter */
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not add meta context: %s", err)
 	}
@@ -298,7 +298,7 @@ func Test230OptInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opt_go failed unexpectedly: %s", err)
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("can_meta failed unexpectedly: %s", err)
 	}

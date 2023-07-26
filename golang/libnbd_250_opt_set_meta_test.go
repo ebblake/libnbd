@@ -28,7 +28,7 @@ func setmetaf(user_data int, name string) int {
 		panic("expected user_data == 42")
 	}
 	set_count++
-	if (name == context_base_allocation) {
+	if (name == CONTEXT_BASE_ALLOCATION) {
 		set_seen = true
 	}
 	return 0
@@ -67,18 +67,18 @@ func Test250OptSetMeta(t *testing.T) {
 	if sr {
 		t.Fatalf("unexpected structured replies state")
 	}
-	meta, err := h.CanMetaContext(context_base_allocation)
+	meta, err := h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
 	if meta {
 		t.Fatalf("unexpected can meta context state")
 	}
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -109,7 +109,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if !sr {
 		t.Fatalf("unexpected structured replies state")
 	}
-	_, err = h.CanMetaContext(context_base_allocation)
+	_, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -151,7 +151,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if r != set_count || r != 0 || set_seen {
 		t.Fatalf("unexpected set_count after opt_set_meta_context")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
@@ -166,7 +166,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
-	err = h.AddMetaContext(context_base_allocation)
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not request add_meta_context: %s", err)
 	}
@@ -183,7 +183,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if r != 1 || r != set_count || !set_seen {
 		t.Fatalf("unexpected set_count after opt_set_meta_context")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
@@ -204,7 +204,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not request opt_go: %s", err)
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}
@@ -224,7 +224,7 @@ func Test250OptSetMeta(t *testing.T) {
 	if set_count != 0 || set_seen {
 		t.Fatalf("unexpected set_count after opt_set_meta_context")
 	}
-	meta, err = h.CanMetaContext(context_base_allocation)
+	meta, err = h.CanMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("could not check can meta context: %s", err)
 	}

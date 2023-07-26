@@ -31,7 +31,7 @@ func mcf(metacontext string, offset uint64, e []uint32, error *int) int {
 	if *error != 0 {
 		panic("expected *error == 0")
 	}
-	if metacontext == "base:allocation" {
+	if metacontext == CONTEXT_BASE_ALLOCATION {
 		entries = e
 	}
 	return 0
@@ -69,7 +69,7 @@ func Test460BlockStatus(t *testing.T) {
 	}
 	defer h.Close()
 
-	err = h.AddMetaContext("base:allocation")
+	err = h.AddMetaContext(CONTEXT_BASE_ALLOCATION)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}

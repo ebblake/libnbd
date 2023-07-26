@@ -469,11 +469,15 @@ const (
   ) constants;
   List.iter (
     fun (ns, ctxts) ->
-      pr "    namespace_%s = \"%s:\"\n" ns ns;
+      let ns_upper = String.uppercase_ascii ns in
+      pr "    /* Meta-context namespace \"%s\" */\n" ns;
+      pr "    NAMESPACE_%s = \"%s:\"\n" ns_upper ns;
       List.iter (
         fun (ctxt, consts) ->
-          let ctxt_macro = macro_name ctxt in
-          pr "    context_%s_%s = \"%s:%s\"\n" ns ctxt_macro ns ctxt;
+          let ctxt_macro = String.uppercase_ascii (macro_name ctxt) in
+          pr "    CONTEXT_%s_%s = \"%s:%s\"\n" ns_upper ctxt_macro ns ctxt;
+          if consts <> [] then
+            pr "    /* Defined bits in \"%s:%s\" */\n" ns ctxt;
           List.iter (fun (n, v) ->
               pr "    %s uint32 = %d\n" n v
           ) consts
