@@ -124,16 +124,16 @@ func Test620Stats(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	if bs2 != bs1 + 28 {
+	if bs2 != (bs1 + 28) {
 		t.Fatalf("unexpected value for bs2")
 	}
-	if cs2 != cs1 + 1 {
+	if cs2 != (cs1 + 1) {
 		t.Fatalf("unexpected value for cs2")
 	}
-	if br2 != br1 + 16 {   /* assumes nbdkit uses simple reply */
+	if br2 != (br1 + 16) { /* assumes nbdkit uses simple reply */
 		t.Fatalf("unexpected value for br2")
 	}
-	if cr2 != cr1 + 1 {
+	if cr2 != (cr1 + 1) {
 		t.Fatalf("unexpected value for cr2")
 	}
 
@@ -169,13 +169,13 @@ func Test620Stats(t *testing.T) {
 	if bs3 <= bs2 {
 		t.Fatalf("unexpected value for bs3")
 	}
-	if cs3 != cs2 + 1 {
+	if cs3 != (cs2 + 1) {
 		t.Fatalf("unexpected value for cs3")
 	}
 	if br3 < br2 {
 		t.Fatalf("unexpected value for br3")
 	}
-	if cr3 != cr2 + slop {
+	if cr3 != (cr2 + slop) {
 		t.Fatalf("unexpected value for cr3")
 	}
 }
