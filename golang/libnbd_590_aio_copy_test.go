@@ -29,7 +29,9 @@ var bytes_read = uint(0)
 var bytes_written = uint(0)
 
 /* Functions to handle FdSet.
-   XXX These probably only work on 64 bit platforms. */
+ *
+ * XXX These probably only work on 64 bit platforms.
+ */
 func fdset_set(set *syscall.FdSet, fd int) {
 	(*set).Bits[fd/64] |= 1 << (uintptr(fd) % 64)
 }
@@ -57,7 +59,7 @@ type wbuf struct {
 var writes []wbuf
 
 /* Called whenever any asynchronous pread command from
-   the source has completed. */
+ * the source has completed. */
 func read_completed(buf AioBuffer, offset uint64) int {
 	bytes_read += buf.Size
 	/* Move the AIO buffer to the write queue. */
@@ -67,7 +69,7 @@ func read_completed(buf AioBuffer, offset uint64) int {
 }
 
 /* Called whenever any asynchronous pwrite command to the
-   destination has completed. */
+ * destination has completed. */
 func write_completed(buf AioBuffer) int {
 	bytes_written += buf.Size
 	/* Now we have to manually free the AIO buffer. */
