@@ -290,8 +290,12 @@ nbd_internal_command_common (struct nbd_handle *h,
  err:
   /* Since we did not queue the command, we must free the callbacks. */
   if (cb) {
-    if (type == NBD_CMD_BLOCK_STATUS)
-      FREE_CALLBACK (cb->fn.extent);
+    if (type == NBD_CMD_BLOCK_STATUS) {
+      if (cb->wide)
+        FREE_CALLBACK (cb->fn.extent32);
+      else
+        FREE_CALLBACK (cb->fn.extent64);
+    }
     if (type == NBD_CMD_READ)
       FREE_CALLBACK (cb->fn.chunk);
     FREE_CALLBACK (cb->completion);
@@ -487,7 +491,7 @@ nbd_unlocked_aio_block_status (struct nbd_handle *h,
                                nbd_completion_callback *completion,
                                uint32_t flags)
 {
-  struct command_cb cb = { .fn.extent = *extent,
+  struct command_cb cb = { .fn.extent32 = *extent, .wide = false,
                            .completion = *completion };
 
   if (h->strict & LIBNBD_STRICT_COMMANDS) {

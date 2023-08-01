@@ -80,12 +80,14 @@ struct export {
 
 struct command_cb {
   union {
-    nbd_extent_callback extent;
+    nbd_extent_callback extent32;
+    nbd_extent64_callback extent64;
     nbd_chunk_callback chunk;
     nbd_list_callback list;
     nbd_context_callback context;
   } fn;
   nbd_completion_callback completion;
+  bool wide;
 };
 
 struct nbd_handle {
@@ -323,7 +325,11 @@ struct nbd_handle {
     struct nbd_block_descriptor_32 *narrow;
     struct nbd_block_descriptor_64 *wide;
   } bs_raw;
-  uint32_t *bs_cooked; /* Note that this array has 2*bs_count entries */
+  union {
+    char *storage;
+    uint32_t *narrow;  /* Note that this array has 2*bs_count entries... */
+    nbd_extent *wide;  /* ...while this is just bs_count entries. */
+  } bs_cooked;
 
   /* Commands which are waiting to be issued [meaning the request
    * packet is sent to the server].  This is used as a simple linked

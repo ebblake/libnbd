@@ -450,6 +450,7 @@ let print_rust_closure_to_raw_fn { cbname; cbargs } =
   let ffi_cbargs_names = List.flatten (List.map ffi_cbarg_names cbargs) in
   let ffi_cbargs_types = List.flatten (List.map ffi_cbarg_types cbargs) in
   let rust_cbargs_names = List.map rust_cbarg_name cbargs in
+  pr "#[allow(unused)] /* XXX temporary hack */\n";
   pr "pub(crate) unsafe fn %s_to_raw<F>(f: F) -> sys::nbd_%s_callback\n"
     cbname cbname;
   pr "  where F: %s\n" closure_trait;
@@ -557,7 +558,7 @@ let print_rust_imports () =
   pr "use std::path::PathBuf;\n";
   pr "use std::ptr;\n";
   pr "use std::slice;\n";
-  (* pr "use libnbd_sys::nbd_extent;\n"; uncomment for extent64_callback *)
+  pr "use libnbd_sys::nbd_extent;\n";
   pr "\n"
 
 let generate_rust_bindings () =

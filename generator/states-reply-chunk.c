@@ -147,7 +147,8 @@ STATE_MACHINE {
         !h->meta_valid || h->meta_contexts.len == 0 ||
         !bs_reply_length_ok (type, length))
       goto resync;
-    assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
+    ASSERT_MEMBER_ALIAS (struct command_cb, fn.extent32, fn.extent64);
+    assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent32));
     if (h->extended_headers != (type == NBD_REPLY_TYPE_BLOCK_STATUS_EXT)) {
       debug (h, "wrong block status reply type detected, "
              "this is probably a server bug");
@@ -457,7 +458,7 @@ STATE_MACHINE {
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
     assert (bs_reply_length_ok (type, h->payload_left));
     STATIC_ASSERT (sizeof (struct nbd_block_descriptor_32) ==
-                   2 * sizeof *h->bs_cooked,
+                   2 * sizeof *h->bs_cooked.narrow,
                    _block_desc_is_multiple_of_bs_entry);
     ASSERT_MEMBER_ALIAS (union chunk_payload, bs_hdr_32.context_id,
                          bs_hdr_64.context_id);
@@ -481,16 +482,20 @@ STATE_MACHINE {
     }
 
     free (h->bs_raw.storage);
-    free (h->bs_cooked);
+    free (h->bs_cooked.storage);
     h->bs_raw.storage = malloc (h->payload_left);
-    h->bs_cooked = malloc (2 * h->bs_count * sizeof *h->bs_cooked);
-    if (h->bs_raw.storage == NULL || h->bs_cooked == NULL) {
+    if (cmd->cb.wide)
+      h->bs_cooked.storage = malloc (h->bs_count * sizeof *h->bs_cooked.wide);
+    else
+      h->bs_cooked.storage = malloc (2 * h->bs_count *
+                                     sizeof *h->bs_cooked.narrow);
+    if (h->bs_raw.storage == NULL || h->bs_cooked.storage == NULL) {
       SET_NEXT_STATE (%.DEAD);
       set_error (errno, "malloc");
       free (h->bs_raw.storage);
-      free (h->bs_cooked);
+      free (h->bs_cooked.storage);
       h->bs_raw.storage = NULL;
-      h->bs_cooked = NULL;
+      h->bs_cooked.storage = NULL;
       return 0;
     }
 
@@ -511,6 +516,7 @@ STATE_MACHINE {
   uint64_t orig_len, len, flags;
   uint64_t total, cap;
   bool stop;
+  int ret;
 
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
@@ -523,7 +529,7 @@ STATE_MACHINE {
 
     assert (cmd); /* guaranteed by CHECK */
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
-    assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
+    assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent32));
     assert (h->bs_count && h->bs_raw.storage);
     assert (h->meta_valid);
 
@@ -579,7 +585,7 @@ STATE_MACHINE {
           cmd->error = cmd->error ? : EPROTO;
           len = h->exportsize;
         }
-        if (len > UINT32_MAX) {
+        if (len > UINT32_MAX && !cmd->cb.wide) {
           /* Pick an aligned value rather than overflowing 32-bit
            * callback; this does not require an error.
            */
@@ -587,7 +593,7 @@ STATE_MACHINE {
           len = (uint32_t)-MAX_REQUEST_SIZE;
         }
         flags = be64toh (h->bs_raw.wide[i].status_flags);
-        if (flags > UINT32_MAX) {
+        if (flags > UINT32_MAX && !cmd->cb.wide) {
           stop = true;
           if (i > 0)
             break; /* Skip this and later extents; we already made progress */
@@ -610,8 +616,15 @@ STATE_MACHINE {
         cmd->error = cmd->error ? : EPROTO;
         len -= total - cap;
       }
-      h->bs_cooked[i * 2] = len;
-      h->bs_cooked[i * 2 + 1] = flags;
+      if (cmd->cb.wide) {
+        h->bs_cooked.wide[i].length = len;
+        h->bs_cooked.wide[i].flags = flags;
+      }
+      else {
+        assert ((len | flags) <= UINT32_MAX);
+        h->bs_cooked.narrow[i * 2] = len;
+        h->bs_cooked.narrow[i * 2 + 1] = flags;
+      }
     }
 
     /* Call the caller's extent function.  Yes, our 32-bit public API
@@ -623,10 +636,14 @@ STATE_MACHINE {
              PRIu64 " and total %" PRIu64 " near extent %zu",
              orig_len, total, i);
     error = cmd->error;
-    if (CALL_CALLBACK (cmd->cb.fn.extent, name, cmd->offset,
-                       h->bs_cooked, i * 2, &error) == -1)
-      if (cmd->error == 0)
-        cmd->error = error ? error : EPROTO;
+    if (cmd->cb.wide)
+      ret = CALL_CALLBACK (cmd->cb.fn.extent64, name, cmd->offset,
+                           h->bs_cooked.wide, i, &error);
+    else
+      ret = CALL_CALLBACK (cmd->cb.fn.extent32, name, cmd->offset,
+                           h->bs_cooked.narrow, i * 2, &error);
+    if (ret == -1 && cmd->error == 0)
+      cmd->error = error ? error : EPROTO;
   }
   return 0;
 

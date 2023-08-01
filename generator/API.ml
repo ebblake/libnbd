@@ -175,7 +175,7 @@ let context_closure = {
   cbargs = [ CBString "name" ]
 }
 let all_closures = [ chunk_closure; completion_closure;
-                     debug_closure; extent_closure; (* extent64_closure; *)
+                     debug_closure; extent_closure; extent64_closure;
                      list_closure;
                      context_closure ]
 

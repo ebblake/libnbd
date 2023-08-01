@@ -134,7 +134,7 @@ nbd_close (struct nbd_handle *h)
 
   string_vector_empty (&h->querylist);
   free (h->bs_raw.storage);
-  free (h->bs_cooked);
+  free (h->bs_cooked.storage);
   nbd_internal_reset_size_and_flags (h);
   for (i = 0; i < h->meta_contexts.len; ++i)
     free (h->meta_contexts.ptr[i].name);
