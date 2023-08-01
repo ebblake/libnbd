@@ -461,6 +461,11 @@ STATE_MACHINE {
   struct command *cmd = h->reply_cmd;
   size_t i;
   uint32_t context_id;
+  int error;
+  const char *name;
+  uint32_t orig_len, len, flags;
+  uint64_t total, cap;
+  bool stop;
 
   switch (recv_into_rbuf (h)) {
   case -1: SET_NEXT_STATE (%.DEAD); return 0;
@@ -481,30 +486,63 @@ STATE_MACHINE {
       if (context_id == h->meta_contexts.ptr[i].context_id)
         break;
 
-    if (i < h->meta_contexts.len) {
-      int error = cmd->error;
-      const char *name = h->meta_contexts.ptr[i].name;
-
-      /* Need to byte-swap the entries returned, but apart from that
-       * we don't validate them.  Yes, our 32-bit public API foolishly
-       * tracks the number of uint32_t instead of block descriptors;
-       * see _block_desc_is_multiple_of_bs_entry above.
-       */
-      for (i = 0; i < h->bs_count * 2; ++i)
-        h->bs_entries[i] = be32toh (h->bs_entries[i]);
-
-      /* Call the caller's extent function.  */
-      if (CALL_CALLBACK (cmd->cb.fn.extent, name, cmd->offset,
-                         h->bs_entries, h->bs_count * 2, &error) == -1)
-        if (cmd->error == 0)
-          cmd->error = error ? error : EPROTO;
-    }
-    else
+    SET_NEXT_STATE (%FINISH);
+    if (i == h->meta_contexts.len) {
       /* Emit a debug message, but ignore it. */
       debug (h, "server sent unexpected meta context ID %" PRIu32,
              context_id);
+      break;
+    }
 
-    SET_NEXT_STATE (%FINISH);
+    name = h->meta_contexts.ptr[i].name;
+    total = 0;
+    cap = h->exportsize - cmd->offset;
+    assert (cap <= h->exportsize);
+
+    /* Need to byte-swap the entries returned.  The NBD protocol
+     * allows truncation as long as progress is made; the client
+     * cannot tell the difference between a server's truncation or if
+     * we truncate on a length we don't like.  We stop iterating on a
+     * zero-length extent (error only if it is the first extent), and
+     * on an extent beyond the exportsize (unconditional error after
+     * truncating to exportsize); but do not diagnose issues with the
+     * server's length alignments, flag values, nor compliance with
+     * the REQ_ONE command flag.
+     */
+    for (i = 0, stop = false; i < h->bs_count && !stop; ++i) {
+      orig_len = len = be32toh (h->bs_entries[i * 2]);
+      flags = be32toh (h->bs_entries[i * 2 + 1]);
+      total += len;
+      if (len == 0) {
+        stop = true;
+        if (i > 0)
+          break; /* Skip this and later extents; we already made progress */
+        /* Expose this extent as an error; we made no progress */
+        cmd->error = cmd->error ? : EPROTO;
+      }
+      else if (total > cap) {
+        /* Expose this extent as an error, after truncating to make progress */
+        stop = true;
+        cmd->error = cmd->error ? : EPROTO;
+        len -= total - cap;
+      }
+      h->bs_entries[i * 2] = len;
+      h->bs_entries[i * 2 + 1] = flags;
+    }
+
+    /* Call the caller's extent function.  Yes, our 32-bit public API
+     * foolishly tracks the number of uint32_t instead of block
+     * descriptors; see _block_desc_is_multiple_of_bs_entry above.
+     */
+    if (stop)
+      debug (h, "truncating server's response at unexpected extent length %"
+             PRIu32 " and total %" PRIu64 " near extent %zu",
+             orig_len, total, i);
+    error = cmd->error;
+    if (CALL_CALLBACK (cmd->cb.fn.extent, name, cmd->offset,
+                       h->bs_entries, i * 2, &error) == -1)
+      if (cmd->error == 0)
+        cmd->error = error ? error : EPROTO;
   }
   return 0;
 
