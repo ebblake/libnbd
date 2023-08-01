@@ -254,11 +254,12 @@ struct nbd_handle {
           uint64_t cookie;
         };
       } hdr;
-      union {
+      union chunk_payload {
         uint64_t align_; /* Start reply.payload on an 8-byte alignment */
         struct nbd_chunk_offset_data offset_data;
         struct nbd_chunk_offset_hole offset_hole;
         struct nbd_chunk_block_status_32 bs_hdr_32;
+        struct nbd_chunk_block_status_64 bs_hdr_64;
         struct {
           struct nbd_chunk_error error;
           char msg[NBD_MAX_STRING]; /* Common to all error types */
@@ -316,8 +317,13 @@ struct nbd_handle {
   size_t payload_left;
 
   /* When receiving block status, this is used. */
-  size_t bs_count; /* count of block descriptors (not array entries!) */
-  uint32_t *bs_entries;
+  size_t bs_count; /* count of descriptors (not bytes or cooked entries!) */
+  union {
+    char *storage;
+    struct nbd_block_descriptor_32 *narrow;
+    struct nbd_block_descriptor_64 *wide;
+  } bs_raw;
+  uint32_t *bs_cooked; /* Note that this array has 2*bs_count entries */
 
   /* Commands which are waiting to be issued [meaning the request
    * packet is sent to the server].  This is used as a simple linked

@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#include "minmax.h"
+
 /* Structured reply must be completely inside the bounds of the
  * requesting command.
  */
@@ -48,10 +50,18 @@ structured_reply_in_bounds (uint64_t offset, uint32_t length,
 static bool
 bs_reply_length_ok (uint16_t type, uint32_t length)
 {
-  /* TODO support 64-bit replies */
-  size_t prefix_len = sizeof (struct nbd_chunk_block_status_32);
-  size_t extent_len = sizeof (struct nbd_block_descriptor_32);
-  assert (type == NBD_REPLY_TYPE_BLOCK_STATUS);
+  size_t prefix_len;
+  size_t extent_len;
+
+  if (type == NBD_REPLY_TYPE_BLOCK_STATUS) {
+    prefix_len = sizeof (struct nbd_chunk_block_status_32);
+    extent_len = sizeof (struct nbd_block_descriptor_32);
+  }
+  else {
+    assert (type == NBD_REPLY_TYPE_BLOCK_STATUS_EXT);
+    prefix_len = sizeof (struct nbd_chunk_block_status_64);
+    extent_len = sizeof (struct nbd_block_descriptor_64);
+  }
 
   /* At least one descriptor is needed after id prefix */
   if (length < prefix_len + extent_len)
@@ -132,14 +142,24 @@ STATE_MACHINE {
     break;
 
   case NBD_REPLY_TYPE_BLOCK_STATUS:
+  case NBD_REPLY_TYPE_BLOCK_STATUS_EXT:
     if (cmd->type != NBD_CMD_BLOCK_STATUS ||
         !h->meta_valid || h->meta_contexts.len == 0 ||
         !bs_reply_length_ok (type, length))
       goto resync;
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
+    if (h->extended_headers != (type == NBD_REPLY_TYPE_BLOCK_STATUS_EXT)) {
+      debug (h, "wrong block status reply type detected, "
+             "this is probably a server bug");
+      if (cmd->error == 0)
+        cmd->error = EPROTO;
+    }
     /* Start by reading the context ID. */
-    h->rbuf = &h->sbuf.reply.payload.bs_hdr_32;
-    h->rlen = sizeof h->sbuf.reply.payload.bs_hdr_32;
+    h->rbuf = &h->sbuf.reply.payload;
+    if (type == NBD_REPLY_TYPE_BLOCK_STATUS)
+      h->rlen = sizeof h->sbuf.reply.payload.bs_hdr_32;
+    else
+      h->rlen = sizeof h->sbuf.reply.payload.bs_hdr_64;
     SET_NEXT_STATE (%RECV_BS_HEADER);
     break;
 
@@ -437,20 +457,44 @@ STATE_MACHINE {
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
     assert (bs_reply_length_ok (type, h->payload_left));
     STATIC_ASSERT (sizeof (struct nbd_block_descriptor_32) ==
-                   2 * sizeof *h->bs_entries,
+                   2 * sizeof *h->bs_cooked,
                    _block_desc_is_multiple_of_bs_entry);
-    h->payload_left -= sizeof h->sbuf.reply.payload.bs_hdr_32;
-    assert (h->payload_left % sizeof (struct nbd_block_descriptor_32) == 0);
-    h->bs_count = h->payload_left / sizeof (struct nbd_block_descriptor_32);
+    ASSERT_MEMBER_ALIAS (union chunk_payload, bs_hdr_32.context_id,
+                         bs_hdr_64.context_id);
 
-    free (h->bs_entries);
-    h->bs_entries = malloc (h->payload_left);
-    if (h->bs_entries == NULL) {
+    if (type == NBD_REPLY_TYPE_BLOCK_STATUS) {
+      h->payload_left -= sizeof h->sbuf.reply.payload.bs_hdr_32;
+      assert (h->payload_left % sizeof *h->bs_raw.narrow == 0);
+      h->bs_count = h->payload_left / sizeof *h->bs_raw.narrow;
+    }
+    else {
+      assert (type == NBD_REPLY_TYPE_BLOCK_STATUS_EXT);
+      h->payload_left -= sizeof h->sbuf.reply.payload.bs_hdr_64;
+      assert (h->payload_left % sizeof *h->bs_raw.wide == 0);
+      h->bs_count = h->payload_left / sizeof *h->bs_raw.wide;
+      if (h->bs_count != be32toh (h->sbuf.reply.payload.bs_hdr_64.count)) {
+        h->rbuf = NULL;
+        h->rlen = h->payload_left;
+        SET_NEXT_STATE (%RESYNC);
+        return 0;
+      }
+    }
+
+    free (h->bs_raw.storage);
+    free (h->bs_cooked);
+    h->bs_raw.storage = malloc (h->payload_left);
+    h->bs_cooked = malloc (2 * h->bs_count * sizeof *h->bs_cooked);
+    if (h->bs_raw.storage == NULL || h->bs_cooked == NULL) {
       SET_NEXT_STATE (%.DEAD);
       set_error (errno, "malloc");
+      free (h->bs_raw.storage);
+      free (h->bs_cooked);
+      h->bs_raw.storage = NULL;
+      h->bs_cooked = NULL;
       return 0;
     }
-    h->rbuf = h->bs_entries;
+
+    h->rbuf = h->bs_raw.storage;
     h->rlen = h->payload_left;
     h->payload_left = 0;
     SET_NEXT_STATE (%RECV_BS_ENTRIES);
@@ -459,11 +503,12 @@ STATE_MACHINE {
 
  REPLY.CHUNK_REPLY.RECV_BS_ENTRIES:
   struct command *cmd = h->reply_cmd;
+  uint16_t type;
   size_t i;
   uint32_t context_id;
   int error;
   const char *name;
-  uint32_t orig_len, len, flags;
+  uint64_t orig_len, len, flags;
   uint64_t total, cap;
   bool stop;
 
@@ -474,13 +519,15 @@ STATE_MACHINE {
     SET_NEXT_STATE (%.READY);
     return 0;
   case 0:
+    type = be16toh (h->sbuf.reply.hdr.structured.type);
+
     assert (cmd); /* guaranteed by CHECK */
     assert (cmd->type == NBD_CMD_BLOCK_STATUS);
     assert (CALLBACK_IS_NOT_NULL (cmd->cb.fn.extent));
-    assert (h->bs_count && h->bs_entries);
+    assert (h->bs_count && h->bs_raw.storage);
     assert (h->meta_valid);
 
-    /* Look up the context ID. */
+    /* Look up the context ID. Depends on ASSERT_MEMBER_ALIAS above. */
     context_id = be32toh (h->sbuf.reply.payload.bs_hdr_32.context_id);
     for (i = 0; i < h->meta_contexts.len; ++i)
       if (context_id == h->meta_contexts.ptr[i].context_id)
@@ -498,20 +545,57 @@ STATE_MACHINE {
     total = 0;
     cap = h->exportsize - cmd->offset;
     assert (cap <= h->exportsize);
+    assert (h->exportsize <= INT64_MAX);
 
-    /* Need to byte-swap the entries returned.  The NBD protocol
-     * allows truncation as long as progress is made; the client
-     * cannot tell the difference between a server's truncation or if
-     * we truncate on a length we don't like.  We stop iterating on a
-     * zero-length extent (error only if it is the first extent), and
-     * on an extent beyond the exportsize (unconditional error after
-     * truncating to exportsize); but do not diagnose issues with the
-     * server's length alignments, flag values, nor compliance with
-     * the REQ_ONE command flag.
+    /* Need to byte-swap the entries returned into the callback size
+     * requested by the caller.  The NBD protocol allows truncation as
+     * long as progress is made; the client cannot tell the difference
+     * between a server's truncation or if we truncate on a length we
+     * don't like.  We stop iterating on a zero-length extent (error
+     * only if it is the first extent), on an extent beyond the
+     * exportsize (unconditional error after truncating to
+     * exportsize), and on an extent exceeding a 32-bit callback (no
+     * error, and to simplify alignment, we truncate to 4G-64M); but
+     * do not diagnose issues with the server's length alignments,
+     * flag values, nor compliance with the REQ_ONE command flag.
+     *
+     * FIXME: still need to add nbd_block_status_64 API
      */
     for (i = 0, stop = false; i < h->bs_count && !stop; ++i) {
-      orig_len = len = be32toh (h->bs_entries[i * 2]);
-      flags = be32toh (h->bs_entries[i * 2 + 1]);
+      if (type == NBD_REPLY_TYPE_BLOCK_STATUS) {
+        orig_len = len = be32toh (h->bs_raw.narrow[i].length);
+        flags = be32toh (h->bs_raw.narrow[i].status_flags);
+      }
+      else {
+        orig_len = len = be64toh (h->bs_raw.wide[i].length);
+        if (len > h->exportsize) {
+          /* Since we already asserted exportsize is at most 63 bits,
+           * this ensures the extent length will appear positive even
+           * if treated as signed; treat this as an error now, rather
+           * than waiting for the comparison to cap later, to avoid
+           * arithmetic overflow.
+           */
+          stop = true;
+          cmd->error = cmd->error ? : EPROTO;
+          len = h->exportsize;
+        }
+        if (len > UINT32_MAX) {
+          /* Pick an aligned value rather than overflowing 32-bit
+           * callback; this does not require an error.
+           */
+          stop = true;
+          len = (uint32_t)-MAX_REQUEST_SIZE;
+        }
+        flags = be64toh (h->bs_raw.wide[i].status_flags);
+        if (flags > UINT32_MAX) {
+          stop = true;
+          if (i > 0)
+            break; /* Skip this and later extents; we already made progress */
+          /* Expose this extent as an error; we made no progress */
+          cmd->error = cmd->error ? : EOVERFLOW;
+        }
+      }
+
       total += len;
       if (len == 0) {
         stop = true;
@@ -526,8 +610,8 @@ STATE_MACHINE {
         cmd->error = cmd->error ? : EPROTO;
         len -= total - cap;
       }
-      h->bs_entries[i * 2] = len;
-      h->bs_entries[i * 2 + 1] = flags;
+      h->bs_cooked[i * 2] = len;
+      h->bs_cooked[i * 2 + 1] = flags;
     }
 
     /* Call the caller's extent function.  Yes, our 32-bit public API
@@ -536,11 +620,11 @@ STATE_MACHINE {
      */
     if (stop)
       debug (h, "truncating server's response at unexpected extent length %"
-             PRIu32 " and total %" PRIu64 " near extent %zu",
+             PRIu64 " and total %" PRIu64 " near extent %zu",
              orig_len, total, i);
     error = cmd->error;
     if (CALL_CALLBACK (cmd->cb.fn.extent, name, cmd->offset,
-                       h->bs_entries, i * 2, &error) == -1)
+                       h->bs_cooked, i * 2, &error) == -1)
       if (cmd->error == 0)
         cmd->error = error ? error : EPROTO;
   }
