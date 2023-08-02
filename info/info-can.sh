@@ -38,11 +38,11 @@ requires bash -c "nbdkit sh --dump-plugin | grep has_can_cache=1"
 # and oldstyle never, but that feels like depending a bit too much on
 # the implementation.
 
-# --can structured-reply is not a per-export setting, but rather
+# --has structured-reply is not a per-export setting, but rather
 # something set on the server as a whole.
 
 nbdkit -v -U - sh - \
-       --run '$VG nbdinfo --can structured-reply "nbd+unix:///?socket=$unixsocket"' <<'EOF'
+       --run '$VG nbdinfo --has structured-reply "nbd+unix:///?socket=$unixsocket"' <<'EOF'
 case "$1" in
   get_size) echo 1024 ;;
   pread) ;;
@@ -52,7 +52,7 @@ EOF
 
 st=0
 nbdkit -v -U - --no-sr sh - \
-       --run '$VG nbdinfo --can structured-reply "nbd+unix:///?socket=$unixsocket"' <<'EOF' || st=$?
+       --run '$VG nbdinfo --has structured-reply "nbd+unix:///?socket=$unixsocket"' <<'EOF' || st=$?
 case "$1" in
   get_size) echo 1024 ;;
   pread) ;;

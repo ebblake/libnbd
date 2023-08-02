@@ -119,6 +119,8 @@ main (int argc, char *argv[])
     { "no-colours",         no_argument,       NULL, NO_COLOUR_OPTION },
     { "content",            no_argument,       NULL, CONTENT_OPTION },
     { "no-content",         no_argument,       NULL, NO_CONTENT_OPTION },
+    { "has",                required_argument, NULL, CAN_OPTION },
+    { "have",               required_argument, NULL, CAN_OPTION },
     { "is",                 required_argument, NULL, CAN_OPTION },
     { "json",               no_argument,       NULL, JSON_OPTION },
     { "list",               no_argument,       NULL, 'L' },
@@ -296,7 +298,7 @@ main (int argc, char *argv[])
 
   if (size_only)                /* --size (!list_all) */
     do_size ();
-  else if (can)                 /* --is/--can (!list_all) */
+  else if (can)                 /* --is/--can/--has (!list_all) */
     do_can ();
   else if (map)                 /* --map (!list_all) */
     do_map ();

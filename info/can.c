@@ -92,7 +92,7 @@ do_can (void)
     feature = nbd_can_zero (nbd);
 
   else {
-    fprintf (stderr, "%s: unknown --can or --is option: %s\n",
+    fprintf (stderr, "%s: unknown --can/--is/--has option: %s\n",
              progname, can);
     exit (EXIT_FAILURE);
   }
