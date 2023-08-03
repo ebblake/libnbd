@@ -86,6 +86,7 @@ the I<--json> parameter:
    "protocol": "newstyle-fixed",
    "TLS": false,
    "structured": true,
+   "extended": false,
    "exports": [
      {
        "export-name": "",
@@ -164,6 +165,11 @@ Test if the NBD URI connection is using TLS.
 
 Test if server has support for structured replies (a prerequisite
 for supporting block status commands).
+
+=item nbdinfo --has extended-headers URI
+
+Test if server supports extended headers (a prerequisite for
+supporting 64-bit commands; implies structured replies as well).
 
 =item nbdinfo --is rotational URI
 
@@ -367,6 +373,8 @@ When using I<--list>, the default is I<--no-content> (since
 downloading from each export is expensive).  To enable content probing
 use I<--list --content>.
 
+=item B<--has extended-headers>
+
 =item B<--has structured-reply>
 
 Test properties of the NBD server connection.  The command does not
@@ -377,6 +385,7 @@ indicate an error querying the flag).
 For further information see the L<NBD
 protocol|https://github.com/NetworkBlockDevice/nbd/blob/master/doc/proto.md>
 and the following libnbd functions:
+L<nbd_get_extended_headers_negotiated(3)>,
 L<nbd_get_structured_replies_negotiated(3)>.
 
 =item B<--is read-only>

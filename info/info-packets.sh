@@ -27,12 +27,27 @@ requires nbdkit --no-sr memory --version
 out=info-packets.out
 cleanup_fn rm -f $out
 
+# Older nbdkit does not support extended headers; --no-eh is a reliable
+# witness of whether nbdkit is new enough.
+
+no_eh=
+if nbdkit --no-eh --help >/dev/null 2>/dev/null; then
+    no_eh=--no-eh
+fi
+
 nbdkit --no-sr -U - memory size=1M \
        --run '$VG nbdinfo "nbd+unix:///?socket=$unixsocket"' > $out
 cat $out
 grep "protocol: .*using simple packets" $out
 
-nbdkit -U - memory size=1M \
+nbdkit $no_eh -U - memory size=1M \
        --run '$VG nbdinfo "nbd+unix:///?socket=$unixsocket"' > $out
 cat $out
 grep "protocol: .*using structured packets" $out
+
+if test x != "x$no_eh"; then
+    nbdkit -U - memory size=1M \
+           --run '$VG nbdinfo "nbd+unix:///?socket=$unixsocket"' > $out
+    cat $out
+    grep "protocol: .*using extended packets" $out
+fi

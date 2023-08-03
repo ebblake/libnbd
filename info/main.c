@@ -306,11 +306,13 @@ main (int argc, char *argv[])
     const char *protocol;
     int tls_negotiated;
     int sr_negotiated;
+    int eh_negotiated;
 
     /* Print per-connection fields. */
     protocol = nbd_get_protocol (nbd);
     tls_negotiated = nbd_get_tls_negotiated (nbd);
     sr_negotiated = nbd_get_structured_replies_negotiated (nbd);
+    eh_negotiated = nbd_get_extended_headers_negotiated (nbd);
 
     if (!json_output) {
       if (protocol) {
@@ -318,8 +320,9 @@ main (int argc, char *argv[])
         fprintf (fp, "protocol: %s", protocol);
         if (tls_negotiated >= 0)
           fprintf (fp, " %s TLS", tls_negotiated ? "with" : "without");
-        if (sr_negotiated >= 0)
+        if (eh_negotiated >= 0 && sr_negotiated >= 0)
           fprintf (fp, ", using %s packets",
+                   eh_negotiated ? "extended" :
                    sr_negotiated ? "structured" : "simple");
         fprintf (fp, "\n");
         ansi_restore (fp);
@@ -337,6 +340,8 @@ main (int argc, char *argv[])
         fprintf (fp, "\"TLS\": %s,\n", tls_negotiated ? "true" : "false");
       if (sr_negotiated >= 0)
         fprintf (fp, "\"structured\": %s,\n", sr_negotiated ? "true" : "false");
+      if (eh_negotiated >= 0)
+        fprintf (fp, "\"extended\": %s,\n", eh_negotiated ? "true" : "false");
     }
 
     if (!list_all)

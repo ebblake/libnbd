@@ -50,6 +50,15 @@ do_can (void)
            strcasecmp (can, "structured_replies") == 0)
     feature = nbd_get_structured_replies_negotiated (nbd);
 
+  else if (strcasecmp (can, "eh") == 0 ||
+           strcasecmp (can, "extended header") == 0 ||
+           strcasecmp (can, "extended-header") == 0 ||
+           strcasecmp (can, "extended_header") == 0 ||
+           strcasecmp (can, "extended headers") == 0 ||
+           strcasecmp (can, "extended-headers") == 0 ||
+           strcasecmp (can, "extended_headers") == 0)
+    feature = nbd_get_extended_headers_negotiated (nbd);
+
   else if (strcasecmp (can, "readonly") == 0 ||
            strcasecmp (can, "read-only") == 0 ||
            strcasecmp (can, "read_only") == 0)

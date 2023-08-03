@@ -61,6 +61,33 @@ esac
 EOF
 test $st = 2
 
+# --has extended-headers cannot be positively tested until nbdkit gains
+# --no-eh support.  Otherwise, it is similar to --has structured-reply.
+
+no_eh=
+if nbdkit --no-eh --help >/dev/null 2>/dev/null; then
+    no_eh=--no-eh
+    nbdkit -v -U - sh - \
+           --run '$VG nbdinfo --has extended-headers "nbd+unix:///?socket=$unixsocket"' <<'EOF'
+case "$1" in
+  get_size) echo 1024 ;;
+  pread) ;;
+  *) exit 2 ;;
+esac
+EOF
+fi
+
+st=0
+nbdkit -v -U - $no_eh sh - \
+       --run '$VG nbdinfo --has extended-headers "nbd+unix:///?socket=$unixsocket"' <<'EOF' || st=$?
+case "$1" in
+  get_size) echo 1024 ;;
+  pread) ;;
+  *) exit 2 ;;
+esac
+EOF
+test $st = 2
+
 # --can cache and --can fua require special handling because in
 # nbdkit-sh-plugin we must print "native" or "none".  Also the can_fua
 # flag is only sent if the export is writable (hence can_write below).
