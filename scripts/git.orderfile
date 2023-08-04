@@ -61,6 +61,16 @@ common/*
 # Language bindings.
 python/*
 ocaml/*
+rust/Cargo.toml
+rust/Makefile.am
+rust/run-tests.sh
+rust/src/error.rs
+rust/src/types.rs
+rust/src/utils.rs
+rust/src/lib.rs
+rust/src/handle.rs
+rust/libnbd-sys/*
+rust/tests/*
 
 # Tests.
 tests/*

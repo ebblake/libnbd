@@ -61,3 +61,6 @@ let () =
   output_to "golang/closures.go" GoLang.generate_golang_closures_go;
   output_to "golang/wrappers.go" GoLang.generate_golang_wrappers_go;
   output_to "golang/wrappers.h" GoLang.generate_golang_wrappers_h;
+
+  output_to ~formatter:(Some Rustfmt) "rust/libnbd-sys/src/generated.rs" RustSys.generate_rust_sys_bindings;
+  output_to ~formatter:(Some Rustfmt) "rust/src/bindings.rs" Rust.generate_rust_bindings;

@@ -613,6 +613,32 @@ AS_IF([test "x$enable_golang" != "xno"],[
 ],[GOLANG=no])
 AM_CONDITIONAL([HAVE_GOLANG],[test "x$GOLANG" != "xno"])
 
+dnl Rust.
+AC_ARG_ENABLE([rust],
+    AS_HELP_STRING([--disable-rust], [disable Rust language bindings]),
+        [],
+        [enable_rust=yes])
+AS_IF([test "x$enable_rust" != "xno"],[
+    AC_CHECK_PROG([CARGO],[cargo],[cargo],[no])
+    AC_CHECK_PROG([RUSTFMT],[rustfmt],[rustfmt],[no])
+    AS_IF([test "x$CARGO" != "xno"],[
+        AC_MSG_CHECKING([if $CARGO is usable])
+        AS_IF([ (
+              cd $srcdir/rust/cargo_test &&
+               $CARGO test 2>&AS_MESSAGE_LOG_FD 1>&2 &&
+               $CARGO doc 2>&AS_MESSAGE_LOG_FD 1>&2 &&
+               $CARGO fmt 2>&AS_MESSAGE_LOG_FD 1>&2
+               ) ],[
+            AC_MSG_RESULT([yes])
+        ],[
+            AC_MSG_RESULT([no])
+            AC_MSG_WARN([Rust ($CARGO) is installed but not usable])
+            CARGO=no
+        ])
+    ])
+],[CARGO=no])
+AM_CONDITIONAL([HAVE_RUST],[test "x$CARGO" != "xno" -a "x$RUSTFMT" != "xno"])
+
 AC_MSG_CHECKING([for how to mark DSO non-deletable at runtime])
 NODELETE=
 `$LD --help 2>&1 | grep -- "-z nodelete" >/dev/null` && \
@@ -641,6 +667,8 @@ AC_CONFIG_FILES([python/run-python-tests],
                 [chmod +x,-w python/run-python-tests])
 AC_CONFIG_FILES([run],
                 [chmod +x,-w run])
+AC_CONFIG_FILES([rust/run-tests.sh],
+                [chmod +x,-w rust/run-tests.sh])
 AC_CONFIG_FILES([sh/nbdsh],
                 [chmod +x,-w sh/nbdsh])
 
@@ -655,6 +683,7 @@ AC_CONFIG_FILES([Makefile
                  fuse/Makefile
                  fuzzing/Makefile
                  generator/Makefile
+                 generator/config.ml
                  golang/Makefile
                  golang/examples/Makefile
                  include/Makefile
@@ -669,6 +698,7 @@ AC_CONFIG_FILES([Makefile
                  ocaml/examples/Makefile
                  ocaml/tests/Makefile
                  python/Makefile
+                 rust/Makefile
                  sh/Makefile
                  tests/Makefile
                  tests/functions.sh
@@ -719,6 +749,7 @@ echo
 feature "Go"                    test "x$HAVE_GOLANG_TRUE" = "x"
 feature "OCaml"                 test "x$HAVE_OCAML_TRUE" = "x"
 feature "Python"                test "x$HAVE_PYTHON_TRUE" = "x"
+feature "Rust"                  test "x$HAVE_RUST_TRUE" = "x"
 
 echo
 echo "Server interoperability testing:"

@@ -88,6 +88,7 @@ Makefile.in
 /fuzzing/libnbd-libfuzzer-test
 /fuzzing/sync_dir/
 /fuzzing/testcase_dir/[0-f]*
+/generator/config.ml
 /generator/generator
 /generator/generator-cache.v1
 /generator/stamp-generator
@@ -174,6 +175,16 @@ Makefile.in
 /python/nbd.py
 /python/run-python-tests
 /run
+/rust/Cargo.lock
+/rust/libnbd-sys/Cargo.lock
+/rust/libnbd-sys/libnbd_version
+/rust/libnbd-sys/src/generated.rs
+/rust/src/async_bindings.rs
+/rust/src/bindings.rs
+/rust/target
+/rust/cargo_test/Cargo.lock
+/rust/cargo_test/target
+/rust/run-tests.sh
 /sh/nbdsh
 /sh/nbdsh.1
 /stamp-h1

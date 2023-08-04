@@ -44,6 +44,8 @@ states_code = \
 
 # Source code for the generator.
 sources = \
+	config.mli \
+	config.ml \
 	utils.mli \
 	utils.ml \
 	state_machine.mli \
@@ -60,6 +62,10 @@ sources = \
 	OCaml.ml \
 	GoLang.mli \
 	GoLang.ml \
+	RustSys.mli \
+	RustSys.ml \
+	Rust.mli \
+	Rust.ml \
 	generator.ml \
 	$(NULL)
 

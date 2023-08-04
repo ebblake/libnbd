@@ -27,6 +27,7 @@ EXTRA_DIST = \
 	.ocamlformat \
 	html/pod.css \
 	README.md \
+	rustfmt.toml \
 	scripts/git.orderfile \
 	SECURITY \
 	$(NULL)
@@ -56,6 +57,7 @@ SUBDIRS = \
 	ocaml/tests \
 	golang \
 	golang/examples \
+	rust \
 	interop \
 	fuzzing \
 	bash-completion \

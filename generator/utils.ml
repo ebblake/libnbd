@@ -432,7 +432,8 @@ let output_to ?(formatter = None) filename k =
   chan := NoOutput;
   (match formatter with
   | Some Rustfmt ->
-    (match system (sprintf "rustfmt %s" filename_new) with
+    let cmd = sprintf "%s %s" Config.rustfmt filename_new in
+    (match system cmd with
       | WEXITED 0 -> ()
       | WEXITED i -> failwith (sprintf "Rustfmt failed with exit code %d" i)
       | _ -> failwith "Rustfmt was killed or stopped by a signal.");
