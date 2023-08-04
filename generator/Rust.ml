@@ -455,13 +455,13 @@ let print_rust_closure_to_raw_fn { cbname; cbargs } =
 (* Print the comment for a rust function for a handle call. *)
 let print_rust_handle_call_comment call =
   (* Print comments. *)
-  if call.shortdesc <> String.empty then
+  if call.shortdesc <> "" then
     pr "/// %s\n"
       (String.concat "\n/// " (String.split_on_char '\n' call.shortdesc));
-  if call.longdesc <> String.empty then (
+  if call.longdesc <> "" then (
     (* If a short comment was printed, print a blank comment line befor the
        long description. *)
-    if call.shortdesc <> String.empty then pr "/// \n";
+    if call.shortdesc <> "" then pr "/// \n";
     (* Print all lines of the long description. Since Rust comments are
        supposed to be Markdown, all indented lines will be treated as code
        blocks. Hence we trim all lines. Also brackets ("[" and "]") must be
