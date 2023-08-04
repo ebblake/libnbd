@@ -432,11 +432,13 @@ let output_to ?(formatter = None) filename k =
   chan := NoOutput;
   (match formatter with
   | Some Rustfmt ->
-    let cmd = sprintf "%s %s" Config.rustfmt filename_new in
-    (match system cmd with
-      | WEXITED 0 -> ()
-      | WEXITED i -> failwith (sprintf "Rustfmt failed with exit code %d" i)
-      | _ -> failwith "Rustfmt was killed or stopped by a signal.");
+     if Config.rustfmt <> "no" then (
+       let cmd = sprintf "%s %s" Config.rustfmt filename_new in
+       match system cmd with
+       | WEXITED 0 -> ()
+       | WEXITED i -> failwith (sprintf "Rustfmt failed with exit code %d" i)
+       | _ -> failwith "Rustfmt was killed or stopped by a signal."
+     );
   | None -> ());
   (* Is the new file different from the current file? *)
   if Sys.file_exists filename && files_equal filename filename_new then
