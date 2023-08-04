@@ -436,8 +436,9 @@ let output_to ?(formatter = None) filename k =
        let cmd = sprintf "%s %s" Config.rustfmt filename_new in
        match system cmd with
        | WEXITED 0 -> ()
-       | WEXITED i -> failwith (sprintf "Rustfmt failed with exit code %d" i)
-       | _ -> failwith "Rustfmt was killed or stopped by a signal."
+       | WEXITED i -> failwithf "rustfmt failed with exit code %d" i
+       | WSIGNALED i | WSTOPPED i ->
+          failwithf "rustfmt was killed or stopped by signal %d" i
      );
   | None -> ());
   (* Is the new file different from the current file? *)
