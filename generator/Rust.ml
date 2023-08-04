@@ -58,11 +58,26 @@ let print_rust_flags { flag_prefix; flags } =
   pr "}\n\n"
 
 (* Convert a string to upper snake case. *)
-let to_upper_snake_case s =
-  s |> String.uppercase_ascii |> String.to_seq
-  |> Seq.filter_map (fun ch ->
-         match ch with '-' -> Some '_' | ':' -> None | ch -> Some ch)
-  |> String.of_seq
+let rec to_upper_snake_case s =
+  let s = String.uppercase_ascii s in
+  let s = explode s in
+  let s = filter_map (
+    function
+    |'-' -> Some "_" | ':' -> None
+    | ch -> Some (String.make 1 ch)
+  ) s in
+  String.concat "" s
+
+(* Split a string into a list of chars.  In later OCaml we could
+ * use Seq here, but that didn't exist in OCaml 4.05.
+ *)
+and explode str =
+  let r = ref [] in
+  for i = 0 to String.length str - 1 do
+    let c = String.unsafe_get str i in
+    r := c :: !r;
+  done;
+  List.rev !r
 
 (* Print metadata namespaces. *)
 let print_metadata_namespace (ns, ctxts) =
