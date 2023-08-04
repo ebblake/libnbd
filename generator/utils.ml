@@ -419,7 +419,10 @@ let files_equal n1 n2 =
   | 1 -> false
   | i -> failwithf "%s: failed with error code %d" cmd i
 
-let output_to filename k =
+type formatter =
+  | Rustfmt
+
+let output_to ?(formatter = None) filename k =
   lineno := 1; col := 0;
   let filename_new = filename ^ ".new" in
   let c = open_out filename_new in
@@ -427,7 +430,13 @@ let output_to filename k =
   k ();
   close_out c;
   chan := NoOutput;
-
+  (match formatter with
+  | Some Rustfmt ->
+    (match system (sprintf "rustfmt %s" filename_new) with
+      | WEXITED 0 -> ()
+      | WEXITED i -> failwith (sprintf "Rustfmt failed with exit code %d" i)
+      | _ -> failwith "Rustfmt was killed or stopped by a signal.");
+  | None -> ());
   (* Is the new file different from the current file? *)
   if Sys.file_exists filename && files_equal filename filename_new then
     unlink filename_new                 (* same, so skip it *)

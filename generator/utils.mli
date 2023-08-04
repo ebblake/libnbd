@@ -52,7 +52,13 @@ val files_equal : string -> string -> bool
 val generate_header :
   ?extra_sources:string list -> ?copyright:string -> comment_style -> unit
 
-val output_to : string -> (unit -> 'a) -> unit
+(** Type of code formatter. *)
+type formatter =
+  | Rustfmt
+
+(** Redirect stdout to a file. Possibly formatting the code. *)
+val output_to : ?formatter:formatter option -> string -> (unit -> 'a) -> unit
+
 val pr : ('a, unit, string, unit) format4 -> 'a
 val pr_wrap : ?maxcol:int -> char -> (unit -> 'a) -> unit
 val pr_wrap_cstr : ?maxcol:int -> (unit -> 'a) -> unit
