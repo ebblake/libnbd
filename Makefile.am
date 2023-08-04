@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	.editorconfig \
 	.gitattributes \
 	.gitignore \
+	.ocamlformat \
 	html/pod.css \
 	README.md \
 	scripts/git.orderfile \
