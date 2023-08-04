@@ -36,6 +36,27 @@ source_files = \
 	cargo_test/Cargo.toml \
 	cargo_test/src/lib.rs \
 	cargo_test/README.md \
+	tests/nbdkit_pattern/mod.rs \
+	tests/test_100_handle.rs \
+	tests/test_110_defaults.rs \
+	tests/test_120_set_non_defaults.rs \
+	tests/test_130_private_data.rs \
+	tests/test_140_explicit_close.rs \
+	tests/test_200_connect_command.rs \
+	tests/test_210_opt_abort.rs \
+	tests/test_220_opt_list.rs \
+	tests/test_230_opt_info.rs \
+	tests/test_240_opt_list_meta.rs \
+	tests/test_245_opt_list_meta_queries.rs \
+	tests/test_250_opt_set_meta.rs \
+	tests/test_255_opt_set_meta_queries.rs \
+	tests/test_300_get_size.rs \
+	tests/test_400_pread.rs \
+	tests/test_405_pread_structured.rs \
+	tests/test_410_pwrite.rs \
+	tests/test_460_block_status.rs \
+	tests/test_620_stats.rs \
+	tests/test_log/mod.rs \
 	run-tests.sh.in \
 	$(NULL)
 
@@ -63,6 +84,7 @@ TESTS_ENVIRONMENT = \
 	LIBNBD_DEBUG=1 \
 	$(MALLOC_CHECKS) \
 	abs_top_srcdir=$(abs_top_srcdir) \
+	CARGO=$(CARGO) \
 	$(NULL)
 LOG_COMPILER = $(top_builddir)/run
 TESTS = run-tests.sh
