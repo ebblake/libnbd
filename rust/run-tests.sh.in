@@ -21,6 +21,13 @@
 set -e
 set -x
 
-requires nbdkit --version
+requires @NBDKIT@ --version
+requires @NBDKIT@ floppy --version
+requires @NBDKIT@ memory --version
 
 @CARGO@ test -- --nocapture
+@CARGO@ run --example connect-command
+@NBDKIT@ -U - memory 1M \
+         --run '@CARGO@ run --example get-size -- $unixsocket'
+@NBDKIT@ -U - floppy . \
+         --run '@CARGO@ run --example fetch-first-sector -- $unixsocket'

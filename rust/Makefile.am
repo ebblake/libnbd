@@ -30,6 +30,9 @@ source_files = \
 	src/handle.rs \
 	src/types.rs \
 	src/utils.rs \
+	examples/connect-command.rs \
+	examples/get-size.rs \
+	examples/fetch-first-sector.rs \
 	libnbd-sys/Cargo.toml \
 	libnbd-sys/build.rs \
 	libnbd-sys/src/lib.rs \
