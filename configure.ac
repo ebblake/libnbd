@@ -596,6 +596,7 @@ AC_ARG_ENABLE([golang],
         [enable_golang=yes])
 AS_IF([test "x$enable_golang" != "xno"],[
     AC_CHECK_PROG([GOLANG],[go],[go],[no])
+    AC_CHECK_PROG([GOFMT],[gofmt],[gofmt],[no])
     AS_IF([test "x$GOLANG" != "xno"],[
         AC_MSG_CHECKING([if $GOLANG is usable])
         AS_IF([ (

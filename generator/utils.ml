@@ -420,6 +420,7 @@ let files_equal n1 n2 =
   | i -> failwithf "%s: failed with error code %d" cmd i
 
 type formatter =
+  | Gofmt
   | Rustfmt
 
 let output_to ?(formatter = None) filename k =
@@ -431,6 +432,18 @@ let output_to ?(formatter = None) filename k =
   close_out c;
   chan := NoOutput;
   (match formatter with
+  | Some Gofmt ->
+     (match Config.gofmt with
+      |  Some gofmt ->
+          (let cmd = sprintf "%s -w %s" gofmt filename_new in
+           match system cmd with
+           | WEXITED 0 -> ()
+           | WEXITED i -> failwithf "gofmt failed with exit code %d" i
+           | WSIGNALED i | WSTOPPED i ->
+              failwithf "gofmt was killed or stopped by signal %d" i
+          )
+      | None -> ()
+     )
   | Some Rustfmt ->
      (match Config.rustfmt with
       | Some rustfmt ->
@@ -442,7 +455,7 @@ let output_to ?(formatter = None) filename k =
              failwithf "rustfmt was killed or stopped by signal %d" i
          )
       | None -> ()
-     );
+     )
   | None -> ());
   (* Is the new file different from the current file? *)
   if Sys.file_exists filename && files_equal filename filename_new then

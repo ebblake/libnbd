@@ -54,6 +54,7 @@ val generate_header :
 
 (** Type of code formatter. *)
 type formatter =
+  | Gofmt
   | Rustfmt
 
 (** Redirect stdout to a file. Possibly formatting the code. *)
