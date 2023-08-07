@@ -25,6 +25,7 @@ requires $QEMU_NBD --version
 requires nbdkit --exit-with-parent --version
 requires nbdkit sparse-random --dump-plugin
 requires qemu-img --version
+requires nbdinfo --version
 #requires stat --version
 
 # Check the compress driver is supported by this qemu-nbd.
@@ -35,15 +36,26 @@ export sock
 requires_not bash -c 'qemu-nbd -k $sock --image-opts driver=compress |&
                       grep -sq "Unknown driver.*compress"'
 
+# Choose a disk size and random seed.
+size=1G
+seed=$RANDOM
+
+# Occasionally we will choose a seed which results in a completely
+# empty file.  Skip this case.
+#
+# To test this condition, set seed=12756
+requires_not bash -c "
+    nbdinfo --map --totals -- \
+        [ nbdkit --exit-with-parent sparse-random $size seed=$seed ] |
+        grep -sq '100.0%.*hole,zero'
+"
+
 file1=copy-file-to-qcow2-compressed.file1
 file2=copy-file-to-qcow2-compressed.file2
 out1=copy-file-to-qcow2-compressed.out1
 out2=copy-file-to-qcow2-compressed.out2
 rm -f $file1 $file2 $out1 $out2
 cleanup_fn rm -f $file1 $file2 $out1 $out2
-
-size=1G
-seed=$RANDOM
 
 # Create a compressed qcow2 file1.
 #
