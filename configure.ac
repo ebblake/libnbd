@@ -627,8 +627,7 @@ AS_IF([test "x$enable_rust" != "xno"],[
         AS_IF([ (
               cd $srcdir/rust/cargo_test &&
                $CARGO test 2>&AS_MESSAGE_LOG_FD 1>&2 &&
-               $CARGO doc 2>&AS_MESSAGE_LOG_FD 1>&2 &&
-               $CARGO fmt 2>&AS_MESSAGE_LOG_FD 1>&2
+               $CARGO doc 2>&AS_MESSAGE_LOG_FD 1>&2
                ) ],[
             AC_MSG_RESULT([yes])
         ],[
@@ -638,7 +637,7 @@ AS_IF([test "x$enable_rust" != "xno"],[
         ])
     ])
 ],[CARGO=no])
-AM_CONDITIONAL([HAVE_RUST],[test "x$CARGO" != "xno" -a "x$RUSTFMT" != "xno"])
+AM_CONDITIONAL([HAVE_RUST],[test "x$CARGO" != "xno"])
 
 AC_MSG_CHECKING([for how to mark DSO non-deletable at runtime])
 NODELETE=
