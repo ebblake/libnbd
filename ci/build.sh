@@ -112,7 +112,7 @@ main() {
 
     $MAKE
 
-    if test -n "$CROSS" -a "$CROSS" != "i686"
+    if test -n "$CROSS" && test "$CROSS" != "i686"
     then
         echo "Possibly run tests with an emulator in the future"
         return 0
