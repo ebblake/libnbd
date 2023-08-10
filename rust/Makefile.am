@@ -86,7 +86,6 @@ target/doc/libnbd/index.html: $(source_files)
 TESTS_ENVIRONMENT = \
 	LIBNBD_DEBUG=1 \
 	$(MALLOC_CHECKS) \
-	abs_top_srcdir=$(abs_top_srcdir) \
 	CARGO=$(CARGO) \
 	$(NULL)
 LOG_COMPILER = $(top_builddir)/run
