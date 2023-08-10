@@ -95,7 +95,6 @@ all-local: $(source_files)
 TESTS_ENVIRONMENT = \
 	LIBNBD_DEBUG=1 \
 	$(MALLOC_CHECKS) \
-	abs_top_srcdir=$(abs_top_srcdir) \
 	$(NULL)
 LOG_COMPILER = $(top_builddir)/run
 TESTS = run-tests.sh

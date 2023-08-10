@@ -21,6 +21,9 @@
 set -e
 set -x
 
+# Set by functions.sh and used in the tests.
+export abs_top_srcdir
+
 requires nbdkit --version
 
 # The -count=1 parameter is the "idiomatic way to bypass test caching".
