@@ -308,6 +308,11 @@ and print_cbarg_list' ?(types = true) cbargs =
          pr "%s, " n;
          if types then pr "size_t ";
          pr "%s" len
+      | CBArrayAndLen (Extent64 n, len) ->
+         if types then pr "nbd_extent *";
+         pr "%s, " n;
+         if types then pr "size_t ";
+         pr "%s" len
       | CBArrayAndLen _ -> assert false
       | CBBytesIn (n, len) ->
          if types then pr "const void *";
@@ -487,6 +492,13 @@ let generate_include_libnbd_h () =
   pr "\n";
   pr "extern int nbd_get_errno (void);\n";
   pr "#define LIBNBD_HAVE_NBD_GET_ERRNO 1\n";
+  pr "\n";
+  pr "/* This is used in the callback for nbd_block_status_64.\n";
+  pr " */\n";
+  pr "typedef struct {\n";
+  pr "  uint64_t length;\n";
+  pr "  uint64_t flags;\n";
+  pr "} nbd_extent;\n";
   pr "\n";
   print_closure_structs ();
   List.iter (
