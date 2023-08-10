@@ -91,6 +91,9 @@ TESTS_ENVIRONMENT = \
 LOG_COMPILER = $(top_builddir)/run
 TESTS = run-tests.sh
 
+check-valgrind:
+	LIBNBD_VALGRIND=1 $(MAKE) check
+
 clean-local:
 	$(CARGO) clean
 	$(CARGO) clean --manifest-path cargo_test/Cargo.toml
