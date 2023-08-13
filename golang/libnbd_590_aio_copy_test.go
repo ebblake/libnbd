@@ -1,3 +1,11 @@
+//go:build linux
+// +build linux
+
+/* ^ Only test this on Linux.  syscall.Select is buggy on BSD because
+ * it doesn't return the number of file descriptors.  See:
+ *  https://github.com/golang/go/issues/34458
+ */
+
 /* libnbd golang tests
  * Copyright Red Hat
  *
