@@ -99,8 +99,10 @@ else
     CGO_LDFLAGS="$CGO_LDFLAGS -L$b/lib/.libs"
 fi
 export CGO_LDFLAGS
-if ( [ @GOLANG_MAJOR_VERSION@ -eq 1 ] && [ @GOLANG_MINOR_VERSION@ -ge 21 ] ) ||
-       [ @GOLANG_MAJOR_VERSION@ -ge 2 ]; then
+if [ -n "@GOLANG_MAJOR_VERSION@" ] &&
+   ( ( [ "@GOLANG_MAJOR_VERSION@" -eq 1 ] &&
+       [ "@GOLANG_MINOR_VERSION@" -ge 21 ] ) ||
+     [ "@GOLANG_MAJOR_VERSION@" -ge 2 ] ); then
     # cgocheck=1 "implements reasonably cheap dynamic checks"
     export GODEBUG=cgocheck=1,invalidptr=1
     # cgocheck2 implements complete pointer checking.
