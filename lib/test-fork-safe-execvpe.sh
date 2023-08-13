@@ -20,14 +20,17 @@
 
 set -e
 
-# Determine the absolute pathname of the execvpe helper binary. The "realpath"
-# utility is not in POSIX, but Linux, FreeBSD and OpenBSD all have it.
+# The "realpath" utility is not in POSIX, but Linux, FreeBSD and
+# OpenBSD all have it.
+requires "$REALPATH" /
+
+# Determine the absolute pathname of the execvpe helper binary.
 bname=$(basename -- "$0" .sh)
 dname=$(dirname -- "$0")
-if ! execvpe=$(realpath -- "$dname/$bname"); then
+if ! execvpe=$($REALPATH -- "$dname/$bname"); then
     # Work around <https://bugs.busybox.net/show_bug.cgi?id=15466>. For example,
     # Alpine Linux in the libnbd CI uses BusyBox.
-    execvpe=$(realpath "$dname/$bname")
+    execvpe=$($REALPATH "$dname/$bname")
 fi
 
 # This is an elaborate way to control the PATH variable around the $execvpe

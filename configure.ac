@@ -31,6 +31,10 @@ AC_CANONICAL_HOST
 
 AC_PROG_SED
 
+dnl Check for some commands used by the tests which should be the GNU
+dnl coreutils variants.  On macOS these are prefixed with 'g' or 'gnu'.
+AC_CHECK_PROGS([REALPATH],[grealpath realpath],[realpath])
+
 dnl Check for basic C environment.
 AC_PROG_CC
 AC_PROG_INSTALL
