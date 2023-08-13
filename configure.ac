@@ -598,6 +598,17 @@ AS_IF([test "x$enable_golang" != "xno"],[
     AC_CHECK_PROG([GOLANG],[go],[go],[no])
     AC_CHECK_PROG([GOFMT],[gofmt],[gofmt],[no])
     AS_IF([test "x$GOLANG" != "xno"],[
+        $GOLANG version ||:
+
+        AC_MSG_CHECKING([for $GOLANG major version])
+        [GOLANG_MAJOR_VERSION=`$GOLANG version | $SED 's/.*go\([[:digit:]]*\).*/\1/g'`]
+        AC_MSG_RESULT([$GOLANG_MAJOR_VERSION])
+        AC_SUBST([GOLANG_MAJOR_VERSION])
+        AC_MSG_CHECKING([for $GOLANG minor version])
+        [GOLANG_MINOR_VERSION=`$GOLANG version | $SED 's/.*go[[:digit:]]*\.\([[:digit:]]*\).*/\1/g'`]
+        AC_MSG_RESULT([$GOLANG_MINOR_VERSION])
+        AC_SUBST([GOLANG_MINOR_VERSION])
+
         AC_MSG_CHECKING([if $GOLANG is usable])
         AS_IF([ (
                cd $srcdir/golang/configure

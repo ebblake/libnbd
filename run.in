@@ -99,8 +99,16 @@ else
     CGO_LDFLAGS="$CGO_LDFLAGS -L$b/lib/.libs"
 fi
 export CGO_LDFLAGS
-# This implements complete pointer checking in cgo.
-export GODEBUG=cgocheck=2,invalidptr=1
+if ( [ @GOLANG_MAJOR_VERSION@ -eq 1 ] && [ @GOLANG_MINOR_VERSION@ -ge 21 ] ) ||
+       [ @GOLANG_MAJOR_VERSION@ -ge 2 ]; then
+    # cgocheck=1 "implements reasonably cheap dynamic checks"
+    export GODEBUG=cgocheck=1,invalidptr=1
+    # cgocheck2 implements complete pointer checking.
+    export GOEXPERIMENT=cgocheck2
+else
+    # golang <= 1.20 used this instead:
+    export GODEBUG=cgocheck=2,invalidptr=1
+fi
 # On failure, crash (giving us a useful core dump) instead of hiding that.
 export GOTRACEBACK=crash
 
