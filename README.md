@@ -106,6 +106,8 @@ Optional:
 * FUSE 3 to build the nbdfuse program.
 * Linux >= 6.0 and ublksrv library to build nbdublk program.
 * go and cgo, for compiling the golang bindings and tests.
+* cargo with a recent stable toolchain is required to build
+  the Rust bindings.
 * bash-completion >= 1.99 for tab completion.
 
 Optional, only needed to run the test suite:
