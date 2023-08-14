@@ -85,9 +85,7 @@ func (b *AioBuffer) Slice() []byte {
 	if b.P == nil {
 		panic("Using AioBuffer after Free()")
 	}
-	// See https://github.com/golang/go/wiki/cgo#turning-c-arrays-into-go-slices
-	// TODO: Use unsafe.Slice() when we require Go 1.17.
-	return (*[1 << 30]byte)(b.P)[:b.Size:b.Size]
+	return unsafe.Slice((*byte)(b.P), b.Size)
 }
 
 // Get returns a pointer to a byte in the underlying C array. The pointer can

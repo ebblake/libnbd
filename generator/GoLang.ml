@@ -512,11 +512,11 @@ import \"unsafe\"
 /* Closures. */
 
 func copy_uint32_array(entries *C.uint32_t, count C.size_t) []uint32 {
-    ret := make([]uint32, int(count))
-    // See https://github.com/golang/go/wiki/cgo#turning-c-arrays-into-go-slices
-    // TODO: Use unsafe.Slice() when we require Go 1.17.
-    s := (*[1 << 30]uint32)(unsafe.Pointer(entries))[:count:count]
-    copy(ret, s)
+    ret := make([]uint32, count)
+    s := unsafe.Slice(entries, count)
+    for i, item := range s {
+        ret[i] = uint32(item)
+    }
     return ret
 }
 ";
