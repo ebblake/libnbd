@@ -1,4 +1,4 @@
 module libguestfs.org/configure
 
-// First version of golang with working module support.
-go 1.13
+// For unsafe.Slice.
+go 1.17

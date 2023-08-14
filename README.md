@@ -105,10 +105,15 @@ Optional:
 * Python >= 3.3 to build the Python 3 bindings and NBD shell (nbdsh).
 * FUSE 3 to build the nbdfuse program.
 * Linux >= 6.0 and ublksrv library to build nbdublk program.
-* go and cgo, for compiling the golang bindings and tests.
+* go and cgo >= 1.17, for compiling the golang bindings and tests.
 * cargo with a recent stable toolchain is required to build
   the Rust bindings.
 * bash-completion >= 1.99 for tab completion.
+
+Optional, only needed if running 'make dist' for a canonical tarball:
+
+* gofmt for canonical formatting of generated .go files.
+* rustfmt for canonical formatting of generated .rs files.
 
 Optional, only needed to run the test suite:
 
