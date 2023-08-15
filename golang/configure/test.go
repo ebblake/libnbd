@@ -30,7 +30,7 @@ import (
 
 func check_slice(arr *uint32, cnt int) []uint32 {
 	/* Make sure unsafe.Slice() compiles, introduced in 1.17 */
-	unsafe.Slice(arr, cnt)
+	return unsafe.Slice(arr, cnt)
 }
 
 func main() {

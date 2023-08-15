@@ -615,8 +615,8 @@ AS_IF([test "x$enable_golang" != "xno"],[
 
         AC_MSG_CHECKING([if $GOLANG is usable])
         AS_IF([ (
-               cd $srcdir/golang/configure
-               $GOLANG run . 2>&AS_MESSAGE_LOG_FD 1>&2
+               cd $srcdir/golang/configure &&
+               $GOLANG run . 2>&AS_MESSAGE_LOG_FD 1>&2 &&
                $GOLANG mod tidy 2>&AS_MESSAGE_LOG_FD 1>&2
                ) ],[
             AC_MSG_RESULT([yes])
