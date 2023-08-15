@@ -11,7 +11,9 @@ function install_buildenv() {
         autoconf \
         automake \
         bash-completion \
+        busybox \
         ca-certificates \
+        cargo \
         ccache \
         clang \
         diffutils \

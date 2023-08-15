@@ -12,7 +12,9 @@ RUN apk update && \
         autoconf \
         automake \
         bash-completion \
+        busybox \
         ca-certificates \
+        cargo \
         ccache \
         clang \
         diffutils \

@@ -9,8 +9,10 @@ function install_buildenv() {
     zypper install -y \
            autoconf \
            automake \
+           awk \
            bash-completion \
            ca-certificates \
+           cargo \
            ccache \
            clang \
            diffutils \

@@ -16,6 +16,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
                       bash-completion \
                       bsdextrautils \
                       ca-certificates \
+                      cargo \
                       ccache \
                       diffutils \
                       flake8 \
@@ -34,6 +35,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
                       ocaml \
                       ocaml-findlib \
                       ocaml-nox \
+                      original-awk \
                       perl \
                       perl-base \
                       pkgconf \

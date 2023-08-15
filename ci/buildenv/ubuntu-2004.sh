@@ -14,6 +14,7 @@ function install_buildenv() {
             bash-completion \
             bsdmainutils \
             ca-certificates \
+            cargo \
             ccache \
             clang \
             diffutils \
@@ -41,6 +42,7 @@ function install_buildenv() {
             ocaml \
             ocaml-findlib \
             ocaml-nox \
+            original-awk \
             perl \
             perl-base \
             pkgconf \

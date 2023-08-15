@@ -10,8 +10,10 @@ RUN zypper update -y && \
     zypper install -y \
            autoconf \
            automake \
+           awk \
            bash-completion \
            ca-certificates \
+           cargo \
            ccache \
            clang \
            diffutils \

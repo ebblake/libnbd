@@ -17,11 +17,13 @@ RUN dnf distro-sync -y && \
         automake \
         bash-completion \
         ca-certificates \
+        cargo \
         ccache \
         clang \
         diffutils \
         fuse3 \
         fuse3-devel \
+        gawk \
         gcc \
         gcc-c++ \
         git \
