@@ -25,7 +25,13 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"unsafe"
 )
+
+func check_slice(arr *uint32, cnt int) []uint32 {
+	/* Make sure unsafe.Slice() compiles, introduced in 1.17 */
+	unsafe.Slice(arr, cnt)
+}
 
 func main() {
 	fmt.Println(runtime.Version())
