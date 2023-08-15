@@ -4,7 +4,7 @@
 #
 # https://gitlab.com/libvirt/libvirt-ci
 
-FROM docker.io/library/ubuntu:18.04
+FROM docker.io/library/ubuntu:22.04
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
@@ -14,12 +14,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
                       autoconf \
                       automake \
                       bash-completion \
-                      bsdmainutils \
+                      bsdextrautils \
                       ca-certificates \
                       ccache \
                       clang \
                       diffutils \
                       flake8 \
+                      fuse3 \
                       g++ \
                       gcc \
                       git \
@@ -29,6 +30,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
                       jq \
                       libc6-dev \
                       libev-dev \
+                      libfuse3-dev \
                       libglib2.0-dev \
                       libgnutls28-dev \
                       libtool-bin \
@@ -37,6 +39,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
                       make \
                       nbd-client \
                       nbd-server \
+                      nbdkit \
                       ocaml \
                       ocaml-findlib \
                       ocaml-nox \

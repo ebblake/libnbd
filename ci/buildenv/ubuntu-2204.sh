@@ -12,7 +12,7 @@ function install_buildenv() {
             autoconf \
             automake \
             bash-completion \
-            bsdmainutils \
+            bsdextrautils \
             ca-certificates \
             ccache \
             clang \

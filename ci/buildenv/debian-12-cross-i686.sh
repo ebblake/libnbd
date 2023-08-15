@@ -12,7 +12,7 @@ function install_buildenv() {
             autoconf \
             automake \
             bash-completion \
-            bsdmainutils \
+            bsdextrautils \
             ca-certificates \
             ccache \
             diffutils \
@@ -57,7 +57,7 @@ function install_buildenv() {
             libgnutls28-dev:i386 \
             libxml2-dev:i386
     mkdir -p /usr/local/share/meson/cross
-    echo "[binaries]\n\
+    printf "[binaries]\n\
 c = '/usr/bin/i686-linux-gnu-gcc'\n\
 ar = '/usr/bin/i686-linux-gnu-gcc-ar'\n\
 strip = '/usr/bin/i686-linux-gnu-strip'\n\
@@ -67,7 +67,7 @@ pkgconfig = '/usr/bin/i686-linux-gnu-pkg-config'\n\
 system = 'linux'\n\
 cpu_family = 'x86'\n\
 cpu = 'i686'\n\
-endian = 'little'" > /usr/local/share/meson/cross/i686-linux-gnu
+endian = 'little'\n" > /usr/local/share/meson/cross/i686-linux-gnu
     dpkg-query --showformat '${Package}_${Version}_${Architecture}\n' --show > /packages.txt
     mkdir -p /usr/libexec/ccache-wrappers
     ln -s /usr/bin/ccache /usr/libexec/ccache-wrappers/i686-linux-gnu-c++

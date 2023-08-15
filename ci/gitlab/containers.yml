@@ -7,11 +7,18 @@
 
 # Native container jobs
 
-x86_64-alpine-315-container:
+x86_64-alpine-317-container:
   extends: .container_job
   allow_failure: false
   variables:
-    NAME: alpine-315
+    NAME: alpine-317
+
+
+x86_64-alpine-318-container:
+  extends: .container_job
+  allow_failure: false
+  variables:
+    NAME: alpine-318
 
 
 x86_64-almalinux-8-container:
@@ -35,18 +42,18 @@ x86_64-centos-stream-8-container:
     NAME: centos-stream-8
 
 
-x86_64-debian-10-container:
-  extends: .container_job
-  allow_failure: false
-  variables:
-    NAME: debian-10
-
-
 x86_64-debian-11-container:
   extends: .container_job
   allow_failure: false
   variables:
     NAME: debian-11
+
+
+x86_64-debian-12-container:
+  extends: .container_job
+  allow_failure: false
+  variables:
+    NAME: debian-12
 
 
 x86_64-debian-sid-container:
@@ -56,18 +63,18 @@ x86_64-debian-sid-container:
     NAME: debian-sid
 
 
-x86_64-fedora-36-container:
-  extends: .container_job
-  allow_failure: false
-  variables:
-    NAME: fedora-36
-
-
 x86_64-fedora-37-container:
   extends: .container_job
   allow_failure: false
   variables:
     NAME: fedora-37
+
+
+x86_64-fedora-38-container:
+  extends: .container_job
+  allow_failure: false
+  variables:
+    NAME: fedora-38
 
 
 x86_64-fedora-rawhide-container:
@@ -77,18 +84,11 @@ x86_64-fedora-rawhide-container:
     NAME: fedora-rawhide
 
 
-x86_64-opensuse-leap-153-container:
+x86_64-opensuse-leap-15-container:
   extends: .container_job
   allow_failure: false
   variables:
-    NAME: opensuse-leap-153
-
-
-x86_64-opensuse-leap-154-container:
-  extends: .container_job
-  allow_failure: false
-  variables:
-    NAME: opensuse-leap-154
+    NAME: opensuse-leap-15
 
 
 x86_64-opensuse-tumbleweed-container:
@@ -98,13 +98,6 @@ x86_64-opensuse-tumbleweed-container:
     NAME: opensuse-tumbleweed
 
 
-x86_64-ubuntu-1804-container:
-  extends: .container_job
-  allow_failure: false
-  variables:
-    NAME: ubuntu-1804
-
-
 x86_64-ubuntu-2004-container:
   extends: .container_job
   allow_failure: false
@@ -112,18 +105,25 @@ x86_64-ubuntu-2004-container:
     NAME: ubuntu-2004
 
 
-
-# Cross container jobs
-
-i686-debian-10-container:
+x86_64-ubuntu-2204-container:
   extends: .container_job
   allow_failure: false
   variables:
-    NAME: debian-10-cross-i686
+    NAME: ubuntu-2204
 
+
+
+# Cross container jobs
 
 i686-debian-11-container:
   extends: .container_job
   allow_failure: false
   variables:
     NAME: debian-11-cross-i686
+
+
+i686-debian-12-container:
+  extends: .container_job
+  allow_failure: false
+  variables:
+    NAME: debian-12-cross-i686

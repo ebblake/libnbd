@@ -12,12 +12,13 @@ function install_buildenv() {
             autoconf \
             automake \
             bash-completion \
-            bsdmainutils \
+            bsdextrautils \
             ca-certificates \
             ccache \
             clang \
             diffutils \
             flake8 \
+            fuse3 \
             g++ \
             gcc \
             git \
@@ -27,6 +28,7 @@ function install_buildenv() {
             jq \
             libc6-dev \
             libev-dev \
+            libfuse3-dev \
             libglib2.0-dev \
             libgnutls28-dev \
             libtool-bin \
@@ -35,6 +37,7 @@ function install_buildenv() {
             make \
             nbd-client \
             nbd-server \
+            nbdkit \
             ocaml \
             ocaml-findlib \
             ocaml-nox \

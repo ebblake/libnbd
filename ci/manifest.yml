@@ -8,7 +8,9 @@ gitlab:
     check-dco: false
 
 targets:
-  alpine-315: x86_64
+  alpine-317: x86_64
+
+  alpine-318: x86_64
 
   almalinux-8:
     jobs:
@@ -24,21 +26,21 @@ targets:
 
   centos-stream-8: x86_64
 
-  debian-10:
+  debian-11:
     jobs:
       - arch: x86_64
       - arch: i686
 
-  debian-11:
+  debian-12:
     jobs:
       - arch: x86_64
       - arch: i686
 
   debian-sid: x86_64
 
-  fedora-36: x86_64
-
   fedora-37: x86_64
+
+  fedora-38: x86_64
 
   fedora-rawhide:
     jobs:
@@ -60,15 +62,7 @@ targets:
 
   freebsd-current: x86_64
 
-  opensuse-leap-153:
-    jobs:
-      - arch: x86_64
-        # nbdkit TLS support is broken on 15.3
-        # https://listman.redhat.com/archives/libguestfs/2022-October/030165.html
-        variables:
-          GNUTLS: skip
-
-  opensuse-leap-154: x86_64
+  opensuse-leap-15: x86_64
 
   opensuse-tumbleweed: x86_64
 
@@ -79,6 +73,6 @@ targets:
           PATH_EXTRA: /usr/local/opt/ccache/libexec:/usr/local/opt/gettext/bin:/usr/local/opt/libpcap/bin:/usr/local/opt/libxslt/bin:/usr/local/opt/rpcgen/bin
           PKG_CONFIG_PATH: /usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/libpcap/lib/pkgconfig:/usr/local/opt/libxml2/lib/pkgconfig:/usr/local/opt/ncurses/lib/pkgconfig:/usr/local/opt/readline/lib/pkgconfig
 
-  ubuntu-1804: x86_64
-
   ubuntu-2004: x86_64
+
+  ubuntu-2204: x86_64
