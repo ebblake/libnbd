@@ -17,16 +17,9 @@
 
 #![deny(warnings)]
 
-
 #[test]
 fn test_connect_command() {
     let nbd = libnbd::Handle::new().unwrap();
-    nbd.connect_command(&[
-        "nbdkit",
-        "-s",
-        "--exit-with-parent",
-        "-v",
-        "null",
-    ])
-    .unwrap();
+    nbd.connect_command(&["nbdkit", "-s", "--exit-with-parent", "-v", "null"])
+        .unwrap();
 }

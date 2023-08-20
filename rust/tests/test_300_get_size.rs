@@ -17,7 +17,6 @@
 
 #![deny(warnings)]
 
-
 #[test]
 fn test_get_size() {
     let nbd = libnbd::Handle::new().unwrap();

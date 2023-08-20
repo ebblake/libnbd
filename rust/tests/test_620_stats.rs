@@ -17,7 +17,6 @@
 
 #![deny(warnings)]
 
-
 #[test]
 fn test_stats() {
     let nbd = libnbd::Handle::new().unwrap();
@@ -31,14 +30,8 @@ fn test_stats() {
     // Connection performs handshaking, which increments stats.
     // The number of bytes/chunks here may grow over time as more features get
     // automatically negotiated, so merely check that they are non-zero.
-    nbd.connect_command(&[
-        "nbdkit",
-        "-s",
-        "--exit-with-parent",
-        "-v",
-        "null",
-    ])
-    .unwrap();
+    nbd.connect_command(&["nbdkit", "-s", "--exit-with-parent", "-v", "null"])
+        .unwrap();
 
     let bs1 = nbd.stats_bytes_sent();
     let cs1 = nbd.stats_chunks_sent();

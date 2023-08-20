@@ -1,7 +1,6 @@
 //! This example shows how to run an NBD server
 //! (nbdkit) as a subprocess of libnbd.
 
-
 fn main() -> libnbd::Result<()> {
     // Create the libnbd handle.
     let handle = libnbd::Handle::new()?;
