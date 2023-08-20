@@ -5,6 +5,12 @@
 //!
 //!     nbdkit -U - memory 1M \
 //!       --run 'cargo run --example get-size -- $unixsocket'
+//! Or with a URI:
+//!     nbdkit -U - memory 1M \
+//!       --run 'cargo run --example get-size -- "$uri"'
+//!
+//! Or connect over a URI:
+//!     cargo run --example get-size -- nbd://hostname:port
 
 use std::env;
 
@@ -15,15 +21,19 @@ fn main() -> anyhow::Result<()> {
     if args.len() != 2 {
         anyhow::bail!("Usage: {:?} socket", args[0]);
     }
-    let socket = &args[1];
 
-    // Connect to the NBD server over a
-    // Unix domain socket.
-    nbd.connect_unix(socket)?;
+    // Check if the user provided a URI or a unix socket.
+    let socket_or_uri = args[1].to_str().unwrap();
+    if socket_or_uri.contains("://") {
+        nbd.connect_uri(socket_or_uri)?;
+    } else {
+        // Connect to the NBD server over a Unix domain socket.
+        nbd.connect_unix(socket_or_uri)?;
+    }
 
     // Read the size in bytes and print it.
     let size = nbd.get_size()?;
-    println!("{:?}: size = {size} bytes", socket);
+    println!("{:?}: size = {size} bytes", socket_or_uri);
 
     Ok(())
 }

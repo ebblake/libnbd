@@ -7,6 +7,9 @@
 //!
 //!     nbdkit -U - floppy . \
 //!       --run 'cargo run --example fetch-first-sector -- $unixsocket'
+//! Or with a URI:
+//!     nbdkit -U - floppy . \
+//!       --run 'cargo run --example fetch-first-sector -- "$uri"'
 //!
 //! The nbdkit floppy plugin creates an MBR disk so the
 //! first sector is the partition table.
@@ -21,11 +24,15 @@ fn main() -> anyhow::Result<()> {
     if args.len() != 2 {
         anyhow::bail!("Usage: {:?} socket", args[0]);
     }
-    let socket = &args[1];
 
-    // Connect to the NBD server over a
-    // Unix domain socket.
-    nbd.connect_unix(socket)?;
+    // Check if the user provided a URI or a unix socket.
+    let socket_or_uri = args[1].to_str().unwrap();
+    if socket_or_uri.contains("://") {
+        nbd.connect_uri(socket_or_uri)?;
+    } else {
+        // Connect to the NBD server over a Unix domain socket.
+        nbd.connect_unix(socket_or_uri)?;
+    }
 
     // Read the first sector synchronously.
     let mut buf = [0; 512];

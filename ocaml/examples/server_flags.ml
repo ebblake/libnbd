@@ -5,7 +5,7 @@
  * To try it out do this from the top build directory:
  *
  * nbdkit -U - null 1G --filter=exportname exportdesc=fixed:foo \
- *     --run './run ocaml/examples/server_flags.opt $uri'
+ *     --run './run ocaml/examples/server_flags.opt "$uri"'
  *)
 
 open Printf

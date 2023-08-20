@@ -2,7 +2,7 @@
  * NBD URI and queries the size of the default export.  To try it out
  * do this from the top build directory:
  *
- * nbdkit -U - null 1G --run './run ocaml/examples/get_size.opt $uri'
+ * nbdkit -U - null 1G --run './run ocaml/examples/get_size.opt "$uri"'
  *)
 
 open Printf
