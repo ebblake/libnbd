@@ -43,7 +43,7 @@ fn block_status_get_entries(
         flags,
     )
     .unwrap();
-    Arc::into_inner(entries)
+    Arc::try_unwrap(entries)
         .unwrap()
         .into_inner()
         .unwrap()

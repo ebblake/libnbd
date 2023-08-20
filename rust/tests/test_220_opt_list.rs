@@ -66,7 +66,7 @@ impl ConnTester {
                 .push(String::from_utf8(name.to_owned()).unwrap());
             0
         })?;
-        let exports = Arc::into_inner(exports).unwrap().into_inner().unwrap();
+        let exports = Arc::try_unwrap(exports).unwrap().into_inner().unwrap();
         assert_eq!(exports.len(), count as usize);
         assert_eq!(exports.len(), expected_exports.len());
         for (export, &expected) in exports.iter().zip(expected_exports) {

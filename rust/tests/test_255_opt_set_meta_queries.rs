@@ -47,7 +47,7 @@ fn set_meta_ctxs_queries(
         }
         0
     })?;
-    let info = Arc::into_inner(info).unwrap().into_inner().unwrap();
+    let info = Arc::try_unwrap(info).unwrap().into_inner().unwrap();
     assert_eq!(info.count, replies);
     Ok(info)
 }

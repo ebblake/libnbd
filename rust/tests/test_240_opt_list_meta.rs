@@ -43,7 +43,7 @@ fn list_meta_ctxs(nbd: &libnbd::Handle) -> libnbd::Result<CtxInfo> {
         }
         0
     })?;
-    let info = Arc::into_inner(info).unwrap().into_inner().unwrap();
+    let info = Arc::try_unwrap(info).unwrap().into_inner().unwrap();
     assert_eq!(info.count, replies);
     Ok(info)
 }
