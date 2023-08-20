@@ -25,7 +25,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.69"
 description = "Rust bindings for libnbd, a client library for controlling block devices over a network."
-license = "LGPL-2.1-only"
+license = "LGPL-2.1-or-later"
 keywords = ["libnbd", "block-device", "network"]
 categories = ["api-bindings", "emulators", "virtualization"]
 
