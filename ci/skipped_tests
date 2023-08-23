@@ -1,8 +1,5 @@
-# Old nbd-server, tests deadlock, old qemu-img version
-^Ubuntu-18\.04$;interop/interop-nbd-server interop/interop-nbd-server-tls interop/list-exports-nbd-server interop/structured-read.sh
-
-# Debian 10 has weird golang issues (old golang anyway) and old qemu-img
-^Debian GNU/Linux-10;golang/run-tests.sh interop/structured-read.sh
+# On old nbd-server, some tests deadlock
+^Alpine Linux-3\.18.*$;interop/interop-nbd-server interop/interop-nbd-server-tls interop/list-exports-nbd-server
 
 # CentOS (stream) 8 probably has an older, buggy version of nbdkit and is not updated
 ^CentOS .*8$;info/info-uri.sh info/info-list-uris.sh interop/list-exports-nbdkit

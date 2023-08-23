@@ -282,6 +282,9 @@ AM_CONDITIONAL([HAVE_NBDKIT],
 dnl nbd-server, qemu-nbd and qemu-storage-daemon for interop testing.
 AC_CHECK_PROG([NBD_SERVER], [nbd-server], [nbd-server])
 AM_CONDITIONAL([HAVE_NBD_SERVER], [test "x$NBD_SERVER" != "x"])
+AS_IF([test "x$NBD_SERVER" != "x"], [
+   printf "nbd-server version is "; $NBD_SERVER --version | head -1
+])
 AC_CHECK_PROG([QEMU_NBD], [qemu-nbd], [qemu-nbd])
 AM_CONDITIONAL([HAVE_QEMU_NBD], [test "x$QEMU_NBD" != "x"])
 AS_IF([test "x$QEMU_NBD" != "x"], [
