@@ -165,6 +165,17 @@ extent_callback (void *user_data,
   return 0;
 }
 
+/* Block status (extents64) callback, does nothing. */
+static int
+extent64_callback (void *user_data,
+                   const char *metacontext,
+                   uint64_t offset, nbd_extent *entries,
+                   size_t nr_entries, int *error)
+{
+  //fprintf (stderr, "extent64 called, nr_entries = %zu\n", nr_entries);
+  return 0;
+}
+
 /* This is the client (parent process) running libnbd. */
 static char buf[512];
 static char prbuf[65536];
@@ -213,7 +224,7 @@ client (int sock)
                         },
                         0);
 
-  /* Test block status. */
+  /* Test both sizes of block status. */
   nbd_block_status (nbd, length, 0,
                     (nbd_extent_callback) {
                       .callback = extent_callback,
@@ -221,6 +232,13 @@ client (int sock)
                       .free = NULL
                     },
                     0);
+  nbd_block_status_64 (nbd, length, 0,
+                       (nbd_extent64_callback) {
+                         .callback = extent64_callback,
+                         .user_data = NULL,
+                         .free = NULL
+                       },
+                       0);
 
   nbd_shutdown (nbd, 0);
 }

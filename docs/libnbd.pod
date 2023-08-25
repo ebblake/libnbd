@@ -668,14 +668,14 @@ In order to utilize block status, the client must call
 L<nbd_add_meta_context(3)> prior to connecting, for each meta context
 in which it is interested, then check L<nbd_can_meta_context(3)> after
 connection to see which contexts the server actually supports.  If a
-context is supported, the client can then use L<nbd_block_status(3)>
-with a callback function that will receive an array of 32-bit integer
-pairs describing consecutive extents within a context.  In each pair,
-the first integer is the length of the extent, the second is a bitmask
-description of that extent (for the "base:allocation" context, the
-bitmask may include C<LIBNBD_STATE_HOLE> for unallocated portions of
-the file, and/or C<LIBNBD_STATE_ZERO> for portions of the file known
-to read as zero).
+context is supported, the client can then use
+L<nbd_block_status_64(3)> with a callback function that will receive
+an array of structs describing consecutive extents within a context.
+Each struct gives the length of the extent, then a bitmask description
+of that extent (for the "base:allocation" context, the bitmask may
+include C<LIBNBD_STATE_HOLE> for unallocated portions of the file,
+and/or C<LIBNBD_STATE_ZERO> for portions of the file known to read as
+zero).
 
 There is a full example of requesting meta context and using block
 status available at
@@ -933,7 +933,7 @@ will tie up resources until L<nbd_close(3)> is eventually reached).
 =head2 Callbacks with C<int *error> parameter
 
 Some of the high-level commands (L<nbd_pread_structured(3)>,
-L<nbd_block_status(3)>) involve the use of a callback function invoked
+L<nbd_block_status_64(3)>) involve the use of a callback function invoked
 by the state machine at appropriate points in the server's reply
 before the overall command is complete.  These callback functions,
 along with all of the completion callbacks, include a parameter

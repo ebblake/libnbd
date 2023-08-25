@@ -150,7 +150,7 @@ nbd_unlocked_zero (struct nbd_handle *h,
   return wait_for_command (h, cookie);
 }
 
-/* Issue a block status command and wait for the reply. */
+/* Issue a block status command and wait for the reply, 32-bit callback. */
 int
 nbd_unlocked_block_status (struct nbd_handle *h,
                            uint64_t count, uint64_t offset,
@@ -165,6 +165,25 @@ nbd_unlocked_block_status (struct nbd_handle *h,
     return -1;
 
   assert (CALLBACK_IS_NULL (*extent));
+  return wait_for_command (h, cookie);
+}
+
+/* Issue a block status command and wait for the reply, 64-bit callback. */
+int
+nbd_unlocked_block_status_64 (struct nbd_handle *h,
+                              uint64_t count, uint64_t offset,
+                              nbd_extent64_callback *extent64,
+                              uint32_t flags)
+{
+  int64_t cookie;
+  nbd_completion_callback c = NBD_NULL_COMPLETION;
+
+  cookie = nbd_unlocked_aio_block_status_64 (h, count, offset, extent64, &c,
+                                             flags);
+  if (cookie == -1)
+    return -1;
+
+  assert (CALLBACK_IS_NULL (*extent64));
   return wait_for_command (h, cookie);
 }
 
@@ -484,16 +503,10 @@ nbd_unlocked_aio_zero (struct nbd_handle *h,
                                       count, ENOSPC, NULL, &cb);
 }
 
-int64_t
-nbd_unlocked_aio_block_status (struct nbd_handle *h,
-                               uint64_t count, uint64_t offset,
-                               nbd_extent_callback *extent,
-                               nbd_completion_callback *completion,
-                               uint32_t flags)
+static int
+check_aio_block_status (struct nbd_handle *h, uint64_t count, uint64_t offset,
+                        uint32_t flags)
 {
-  struct command_cb cb = { .fn.extent32 = *extent, .wide = false,
-                           .completion = *completion };
-
   if (h->strict & LIBNBD_STRICT_COMMANDS) {
     if (!h->structured_replies) {
       set_error (ENOTSUP, "server does not support structured replies");
@@ -508,7 +521,42 @@ nbd_unlocked_aio_block_status (struct nbd_handle *h,
     }
   }
 
+  return 0;
+}
+
+int64_t
+nbd_unlocked_aio_block_status (struct nbd_handle *h,
+                               uint64_t count, uint64_t offset,
+                               nbd_extent_callback *extent,
+                               nbd_completion_callback *completion,
+                               uint32_t flags)
+{
+  struct command_cb cb = { .fn.extent32 = *extent, .wide = false,
+                           .completion = *completion };
+
+  if (check_aio_block_status (h, count, offset, flags) == -1)
+    return -1;
+
   SET_CALLBACK_TO_NULL (*extent);
+  SET_CALLBACK_TO_NULL (*completion);
+  return nbd_internal_command_common (h, flags, NBD_CMD_BLOCK_STATUS, offset,
+                                      count, EINVAL, NULL, &cb);
+}
+
+int64_t
+nbd_unlocked_aio_block_status_64 (struct nbd_handle *h,
+                                  uint64_t count, uint64_t offset,
+                                  nbd_extent64_callback *extent64,
+                                  nbd_completion_callback *completion,
+                                  uint32_t flags)
+{
+  struct command_cb cb = { .fn.extent64 = *extent64, .wide = true,
+                           .completion = *completion };
+
+  if (check_aio_block_status (h, count, offset, flags) == -1)
+    return -1;
+
+  SET_CALLBACK_TO_NULL (*extent64);
   SET_CALLBACK_TO_NULL (*completion);
   return nbd_internal_command_common (h, flags, NBD_CMD_BLOCK_STATUS, offset,
                                       count, EINVAL, NULL, &cb);

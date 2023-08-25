@@ -1565,7 +1565,7 @@ no contexts are reported, or may fail but have a non-empty list.";
 During connection libnbd can negotiate zero or more metadata
 contexts with the server.  Metadata contexts are features (such
 as C<\"base:allocation\">) which describe information returned
-by the L<nbd_block_status(3)> command (for C<\"base:allocation\">
+by the L<nbd_block_status_64(3)> command (for C<\"base:allocation\">
 this is whether blocks of data are allocated, zero or sparse).
 
 This call adds one metadata context to the list to be negotiated.
@@ -1592,7 +1592,7 @@ to pass in other contexts.
 Other metadata contexts are server-specific, but include
 C<\"qemu:dirty-bitmap:...\"> and C<\"qemu:allocation-depth\"> for
 qemu-nbd (see qemu-nbd I<-B> and I<-A> options).";
-    see_also = [Link "block_status"; Link "can_meta_context";
+    see_also = [Link "block_status_64"; Link "can_meta_context";
                 Link "get_nr_meta_contexts"; Link "get_meta_context";
                 Link "clear_meta_contexts"];
   };
@@ -1605,14 +1605,14 @@ qemu-nbd (see qemu-nbd I<-B> and I<-A> options).";
 During connection libnbd can negotiate zero or more metadata
 contexts with the server.  Metadata contexts are features (such
 as C<\"base:allocation\">) which describe information returned
-by the L<nbd_block_status(3)> command (for C<\"base:allocation\">
+by the L<nbd_block_status_64(3)> command (for C<\"base:allocation\">
 this is whether blocks of data are allocated, zero or sparse).
 
 This command returns how many meta contexts have been added to
 the list to request from the server via L<nbd_add_meta_context(3)>.
 The server is not obligated to honor all of the requests; to see
 what it actually supports, see L<nbd_can_meta_context(3)>.";
-    see_also = [Link "block_status"; Link "can_meta_context";
+    see_also = [Link "block_status_64"; Link "can_meta_context";
                 Link "add_meta_context"; Link "get_meta_context";
                 Link "clear_meta_contexts"];
   };
@@ -1625,13 +1625,13 @@ what it actually supports, see L<nbd_can_meta_context(3)>.";
 During connection libnbd can negotiate zero or more metadata
 contexts with the server.  Metadata contexts are features (such
 as C<\"base:allocation\">) which describe information returned
-by the L<nbd_block_status(3)> command (for C<\"base:allocation\">
+by the L<nbd_block_status_64(3)> command (for C<\"base:allocation\">
 this is whether blocks of data are allocated, zero or sparse).
 
 This command returns the i'th meta context request, as added by
 L<nbd_add_meta_context(3)>, and bounded by
 L<nbd_get_nr_meta_contexts(3)>.";
-    see_also = [Link "block_status"; Link "can_meta_context";
+    see_also = [Link "block_status_64"; Link "can_meta_context";
                 Link "add_meta_context"; Link "get_nr_meta_contexts";
                 Link "clear_meta_contexts"];
   };
@@ -1645,7 +1645,7 @@ L<nbd_get_nr_meta_contexts(3)>.";
 During connection libnbd can negotiate zero or more metadata
 contexts with the server.  Metadata contexts are features (such
 as C<\"base:allocation\">) which describe information returned
-by the L<nbd_block_status(3)> command (for C<\"base:allocation\">
+by the L<nbd_block_status_64(3)> command (for C<\"base:allocation\">
 this is whether blocks of data are allocated, zero or sparse).
 
 This command resets the list of meta contexts to request back to
@@ -1654,7 +1654,7 @@ L<nbd_add_meta_context(3)>.  It is primarily useful when option
 negotiation mode is selected (see L<nbd_set_opt_mode(3)>), for
 altering the list of attempted contexts between subsequent export
 queries.";
-    see_also = [Link "block_status"; Link "can_meta_context";
+    see_also = [Link "block_status_64"; Link "can_meta_context";
                 Link "add_meta_context"; Link "get_nr_meta_contexts";
                 Link "get_meta_context"; Link "set_opt_mode"];
   };
@@ -2281,7 +2281,7 @@ are free to pass in other contexts."
 ^ non_blocking_test_call_description;
     see_also = [SectionLink "Flag calls"; Link "opt_info";
                 Link "add_meta_context";
-                Link "block_status"; Link "aio_block_status";
+                Link "block_status_64"; Link "aio_block_status_64";
                 Link "set_request_meta_context"; Link "opt_set_meta_context"];
   };
 
@@ -2712,7 +2712,7 @@ cannot do this, see L<nbd_can_fast_zero(3)>)."
     optargs = [ OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
-    shortdesc = "send block status command to the NBD server";
+    shortdesc = "send block status command, with 32-bit callback";
     longdesc = "\
 Issue the block status command to the NBD server.  If
 supported by the server, this causes metadata context
@@ -2727,7 +2727,15 @@ Note that not all servers can support a C<count> of 4GiB or larger.
 The NBD protocol does not yet have a way for a client to learn if
 the server will enforce an even smaller maximum block status size,
 although a future extension may add a constraint visible in
-L<nbd_get_block_size(3)>.
+L<nbd_get_block_size(3)>.  Furthermore, this function is inherently
+limited to 32-bit values.  If the server replies with a larger
+extent, the length of that extent will be truncated to just
+below 32 bits and any further extents from the server will be
+ignored.  If the server replies with a status value larger than
+32 bits (only possible when extended headers are in use), the
+callback function will be passed an C<EOVERFLOW> error.  To get
+the full extent information from a server that supports 64-bit
+extents, you must use L<nbd_block_status_64(3)>.
 
 Depending on which metadata contexts were enabled before
 connecting (see L<nbd_add_meta_context(3)>) and which are
@@ -2747,7 +2755,7 @@ parameter is a string such as C<\"base:allocation\">.  The C<entries>
 array is an array of pairs of integers with the first entry in each
 pair being the length (in bytes) of the block and the second entry
 being a status/flags field which is specific to the metadata context.
-(The number of pairs passed to the function is C<nr_entries/2>.)  The
+The number of pairs passed to the function is C<nr_entries/2>.  The
 NBD protocol document in the section about
 C<NBD_REPLY_TYPE_BLOCK_STATUS> describes the meaning of this array;
 for contexts known to libnbd, B<E<lt>libnbd.hE<gt>> contains constants
@@ -2771,8 +2779,77 @@ return only one extent per metadata context where that extent
 does not exceed C<count> bytes; however, libnbd does not
 validate that the server obeyed the flag."
 ^ strict_call_description;
-    see_also = [Link "add_meta_context"; Link "can_meta_context";
+    see_also = [Link "block_status_64";
+                Link "add_meta_context"; Link "can_meta_context";
                 Link "aio_block_status"; Link "set_strict_mode"];
+  };
+
+  "block_status_64", {
+    default_call with
+    args = [ UInt64 "count"; UInt64 "offset"; Closure extent64_closure ];
+    optargs = [ OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
+    ret = RErr;
+    permitted_states = [ Connected ];
+    shortdesc = "send block status command, with 64-bit callback";
+    longdesc = "\
+Issue the block status command to the NBD server.  If
+supported by the server, this causes metadata context
+information about blocks beginning from the specified
+offset to be returned. The C<count> parameter is a hint: the
+server may choose to return less status, or the final block
+may extend beyond the requested range. If multiple contexts
+are supported, the number of blocks and cumulative length
+of those blocks need not be identical between contexts.
+
+Note that not all servers can support a C<count> of 4GiB or larger.
+The NBD protocol does not yet have a way for a client to learn if
+the server will enforce an even smaller maximum block status size,
+although a future extension may add a constraint visible in
+L<nbd_get_block_size(3)>.
+
+Depending on which metadata contexts were enabled before
+connecting (see L<nbd_add_meta_context(3)>) and which are
+supported by the server (see L<nbd_can_meta_context(3)>) this call
+returns information about extents by calling back to the
+C<extent64> function.  The callback cannot call C<nbd_*> APIs on the
+same handle since it holds the handle lock and will
+cause a deadlock.  If the callback returns C<-1>, and no earlier
+error has been detected, then the overall block status command
+will fail with any non-zero value stored into the callback's
+C<error> parameter (with a default of C<EPROTO>); but any further
+contexts will still invoke the callback.
+
+The C<extent64> function is called once per type of metadata available,
+with the C<user_data> passed to this function.  The C<metacontext>
+parameter is a string such as C<\"base:allocation\">.  The C<entries>
+array is an array of B<nbd_extent> structs, containing length (in bytes)
+of the block and a status/flags field which is specific to the metadata
+context.  The number of array entries passed to the function is
+C<nr_entries>.  The NBD protocol document in the section about
+C<NBD_REPLY_TYPE_BLOCK_STATUS> describes the meaning of this array;
+for contexts known to libnbd, B<E<lt>libnbd.hE<gt>> contains constants
+beginning with C<LIBNBD_STATE_> that may help decipher the values.
+On entry to the callback, the C<error> parameter contains the errno
+value of any previously detected error.
+
+It is possible for the extent function to be called
+more times than you expect (if the server is buggy),
+so always check the C<metacontext> field to ensure you
+are receiving the data you expect.  It is also possible
+that the extent function is not called at all, even for
+metadata contexts that you requested.  This indicates
+either that the server doesn't support the context
+or for some other reason cannot return the data.
+
+The C<flags> parameter may be C<0> for no flags, or may contain
+C<LIBNBD_CMD_FLAG_REQ_ONE> meaning that the server should
+return only one extent per metadata context where that extent
+does not exceed C<count> bytes; however, libnbd does not
+validate that the server obeyed the flag."
+^ strict_call_description;
+    see_also = [Link "block_status";
+                Link "add_meta_context"; Link "can_meta_context";
+                Link "aio_block_status_64"; Link "set_strict_mode"];
   };
 
   "poll", {
@@ -3369,7 +3446,7 @@ Other parameters behave as documented in L<nbd_zero(3)>."
                 OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
-    shortdesc = "send block status command to the NBD server";
+    shortdesc = "send block status command, with 32-bit callback";
     longdesc = "\
 Send the block status command to the NBD server.
 
@@ -3377,10 +3454,45 @@ To check if the command completed, call L<nbd_aio_command_completed(3)>.
 Or supply the optional C<completion_callback> which will be invoked
 as described in L<libnbd(3)/Completion callbacks>.
 
-Other parameters behave as documented in L<nbd_block_status(3)>."
+Other parameters behave as documented in L<nbd_block_status(3)>.
+
+This function is inherently limited to 32-bit values.  If the
+server replies with a larger extent, the length of that extent
+will be truncated to just below 32 bits and any further extents
+from the server will be ignored.  If the server replies with a
+status value larger than 32 bits (only possible when extended
+headers are in use), the callback function will be passed an
+C<EOVERFLOW> error.  To get the full extent information from a
+server that supports 64-bit extents, you must use
+L<nbd_aio_block_status_64(3)>.
+"
 ^ strict_call_description;
     see_also = [SectionLink "Issuing asynchronous commands";
+                Link "aio_block_status_64";
                 Link "can_meta_context"; Link "block_status";
+                Link "set_strict_mode"];
+  };
+
+  "aio_block_status_64", {
+    default_call with
+    args = [ UInt64 "count"; UInt64 "offset"; Closure extent64_closure ];
+    optargs = [ OClosure completion_closure;
+                OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
+    ret = RCookie;
+    permitted_states = [ Connected ];
+    shortdesc = "send block status command, with 64-bit callback";
+    longdesc = "\
+Send the block status command to the NBD server.
+
+To check if the command completed, call L<nbd_aio_command_completed(3)>.
+Or supply the optional C<completion_callback> which will be invoked
+as described in L<libnbd(3)/Completion callbacks>.
+
+Other parameters behave as documented in L<nbd_block_status_64(3)>."
+^ strict_call_description;
+    see_also = [SectionLink "Issuing asynchronous commands";
+                Link "aio_block_status";
+                Link "can_meta_context"; Link "block_status_64";
                 Link "set_strict_mode"];
   };
 
@@ -3908,6 +4020,10 @@ let first_version = [
   "aio_opt_starttls", (1, 16);
   "set_socket_activation_name", (1, 16);
   "get_socket_activation_name", (1, 16);
+
+  (* Added in 1.17.x development cycle, will be stable and supported in 1.18. *)
+  "block_status_64", (1, 18);
+  "aio_block_status_64", (1, 18);
 
   (* These calls are proposed for a future version of libnbd, but
    * have not been added to any released version so far.

@@ -564,8 +564,6 @@ STATE_MACHINE {
      * error, and to simplify alignment, we truncate to 4G-64M); but
      * do not diagnose issues with the server's length alignments,
      * flag values, nor compliance with the REQ_ONE command flag.
-     *
-     * FIXME: still need to add nbd_block_status_64 API
      */
     for (i = 0, stop = false; i < h->bs_count && !stop; ++i) {
       if (type == NBD_REPLY_TYPE_BLOCK_STATUS) {

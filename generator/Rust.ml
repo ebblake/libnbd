@@ -450,7 +450,6 @@ let print_rust_closure_to_raw_fn { cbname; cbargs } =
   let ffi_cbargs_names = List.flatten (List.map ffi_cbarg_names cbargs) in
   let ffi_cbargs_types = List.flatten (List.map ffi_cbarg_types cbargs) in
   let rust_cbargs_names = List.map rust_cbarg_name cbargs in
-  pr "#[allow(unused)] /* XXX temporary hack */\n";
   pr "pub(crate) unsafe fn %s_to_raw<F>(f: F) -> sys::nbd_%s_callback\n"
     cbname cbname;
   pr "  where F: %s\n" closure_trait;
