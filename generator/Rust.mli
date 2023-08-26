@@ -18,3 +18,5 @@
 
 (* Print all flag-structs, enums, constants and handle calls in Rust code. *)
 val generate_rust_bindings : unit -> unit
+
+val generate_rust_async_bindings : unit -> unit

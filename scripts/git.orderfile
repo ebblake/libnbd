@@ -69,6 +69,7 @@ rust/src/types.rs
 rust/src/utils.rs
 rust/src/lib.rs
 rust/src/handle.rs
+rust/src/async_handle.rs
 rust/libnbd-sys/*
 rust/examples/*
 rust/tests/*

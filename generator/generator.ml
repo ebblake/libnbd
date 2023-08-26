@@ -69,3 +69,5 @@ let () =
     RustSys.generate_rust_sys_bindings;
   output_to ~formatter:(Some Rustfmt) "rust/src/bindings.rs"
     Rust.generate_rust_bindings;
+  output_to ~formatter:(Some Rustfmt) "rust/src/async_bindings.rs"
+    Rust.generate_rust_async_bindings;

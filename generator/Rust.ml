@@ -573,3 +573,239 @@ let generate_rust_bindings () =
   pr "impl Handle {\n";
   List.iter print_rust_handle_method handle_calls;
   pr "}\n\n"
+
+(*********************************************************)
+(* The rest of the file concerns the asynchronous API.   *)
+(*                                                       *)
+(* See the comments in rust/src/async_handle.rs for more *)
+(* information about how it works.                       *)
+(*********************************************************)
+
+let excluded_handle_calls : NameSet.t =
+  NameSet.of_list
+    [
+      "aio_get_fd";
+      "aio_get_direction";
+      "aio_notify_read";
+      "aio_notify_write";
+      "clear_debug_callback";
+      "get_debug";
+      "poll";
+      "poll2";
+      "set_debug";
+      "set_debug_callback";
+    ]
+
+(* A mapping with names as keys. *)
+module NameMap = Map.Make (String)
+
+(* Strip "aio_" from the beginning of a string. *)
+let strip_aio name : string =
+  if String.starts_with ~prefix:"aio_" name then
+    String.sub name 4 (String.length name - 4)
+  else failwithf "Asynchronous call %s must begin with aio_" name
+
+(* A map with all asynchronous handle calls. The keys are names with "aio_"
+   stripped, the values are a tuple with the actual name (with "aio_"), the
+   [call] and the [async_kind]. *)
+let async_handle_calls : (string * call * async_kind) NameMap.t =
+  handle_calls
+  |> List.filter (fun (n, _) -> not (NameSet.mem n excluded_handle_calls))
+  |> List.filter_map (fun (name, call) ->
+         call.async_kind
+         |> Option.map (fun async_kind ->
+                (strip_aio name, (name, call, async_kind))))
+  |> List.to_seq |> NameMap.of_seq
+
+(* A mapping with all synchronous (not asynchronous) handle calls. Excluded
+   are also all synchronous calls that have an asynchronous counterpart. So if
+   "foo" is the name of a handle call and an asynchronous call "aio_foo"
+   exists, then "foo" will not be in this map. *)
+let sync_handle_calls : call NameMap.t =
+  handle_calls
+  |> List.filter (fun (n, _) -> not (NameSet.mem n excluded_handle_calls))
+  |> List.filter (fun (name, _) ->
+         (not (NameMap.mem name async_handle_calls))
+         && not
+              (String.starts_with ~prefix:"aio_" name
+              && NameMap.mem (strip_aio name) async_handle_calls))
+  |> List.to_seq |> NameMap.of_seq
+
+(* Get the Rust type for an argument in the asynchronous API. Like
+   [rust_arg_type] but no static lifetime on some buffers. *)
+let rust_async_arg_type : arg -> string = function
+  | BytesPersistIn _ -> "&[u8]"
+  | BytesPersistOut _ -> "&mut [u8]"
+  | x -> rust_arg_type x
+
+(* Get the Rust type for an optional argument in the asynchronous API. Like
+   [rust_optarg_type] but no static lifetime on some closures. *)
+let rust_async_optarg_type : optarg -> string = function
+  | OClosure x -> sprintf "Option<%s>" (rust_async_arg_type (Closure x))
+  | x -> rust_optarg_type x
+
+(* A string of the argument list for a method on the handle, with both
+   mandotory and optional arguments. *)
+let rust_async_handle_call_args { args; optargs } : string =
+  let rust_args_names =
+    List.map rust_arg_name args @ List.map rust_optarg_name optargs
+  and rust_args_types =
+    List.map rust_async_arg_type args
+    @ List.map rust_async_optarg_type optargs
+  in
+  String.concat ", "
+    (List.map2 (sprintf "%s: %s") rust_args_names rust_args_types)
+
+(* Print the Rust function for a synchronous handle call. *)
+let print_rust_sync_handle_call name call =
+  print_rust_handle_call_comment call;
+  pr "pub fn %s(&self, %s) -> %s\n" name
+    (rust_async_handle_call_args call)
+    (rust_ret_type call);
+  print_ffi_call name "self.data.handle.handle" call;
+  pr "\n"
+
+(* Print the Rust function for an asynchronous handle call with a completion
+   callback. (Note that "callback" might be abbreviated with "cb" in the
+   following code. *)
+let print_rust_async_handle_call_with_completion_cb name aio_name call =
+  (* An array of all optional arguments. Useful because we need to deal with
+     the index of the completion callback. *)
+  let optargs = Array.of_list call.optargs in
+  (* The index of the completion callback in [optargs] *)
+  let completion_cb_index =
+    Array.find_map
+      (fun (i, optarg) ->
+        match optarg with
+        | OClosure { cbname } ->
+            if cbname = "completion" then Some i else None
+        | _ -> None)
+      (Array.mapi (fun x y -> (x, y)) optargs)
+  in
+  let completion_cb_index =
+    match completion_cb_index with
+    | Some x -> x
+    | None ->
+        failwithf
+          "The handle call %s is claimed to have a completion callback among \
+           its optional arguments by the async_kind field, but that does not \
+           seem to be the case."
+          aio_name
+  in
+  let optargs_before_completion_cb =
+    Array.to_list (Array.sub optargs 0 completion_cb_index)
+  and optargs_after_completion_cb =
+    Array.to_list
+      (Array.sub optargs (completion_cb_index + 1)
+         (Array.length optargs - (completion_cb_index + 1)))
+  in
+  (* All optional arguments excluding the completion callback. *)
+  let optargs_without_completion_cb =
+    optargs_before_completion_cb @ optargs_after_completion_cb
+  in
+  print_rust_handle_call_comment call;
+  pr "pub async fn %s(&self, %s) -> SharedResult<()> {\n" name
+    (rust_async_handle_call_args
+       { call with optargs = optargs_without_completion_cb });
+  pr "    // A oneshot channel to notify when the call is completed.\n";
+  pr "    let (ret_tx, ret_rx) = oneshot::channel::<SharedResult<()>>();\n";
+  pr "    let (ccb_tx, mut ccb_rx) = oneshot::channel::<c_int>();\n";
+  (* Completion callback: *)
+  pr "    let %s = Some(utils::fn_once_to_fn_mut(|err: &mut i32| {\n"
+    (rust_optarg_name (Array.get optargs completion_cb_index));
+  pr "      ccb_tx.send(*err).ok();\n";
+  pr "      1\n";
+  pr "    }));\n";
+  (* End of completion callback. *)
+  print_ffi_call aio_name "self.data.handle.handle" call;
+  pr "?;\n";
+  pr "    let mut ret_tx = Some(ret_tx);\n";
+  pr "    let completion_predicate = \n";
+  pr "     move |_handle: &Handle, res: &SharedResult<()>| {\n";
+  pr "      let ret = match res {\n";
+  pr "        Err(e) if e.is_fatal() => res.clone(),\n";
+  pr "        _ => {\n";
+  pr "          let Ok(errno) = ccb_rx.try_recv() else { return false; };\n";
+  pr "          if errno == 0 {\n";
+  pr "            Ok(())\n";
+  pr "          } else {\n";
+  pr "            if let Err(e) = res {\n";
+  pr "              Err(e.clone())\n";
+  pr "            } else {\n";
+  pr "              Err(Arc::new(";
+  pr "                Error::Recoverable(ErrorKind::from_errno(errno))))\n";
+  pr "            }\n";
+  pr "          }\n";
+  pr "        },\n";
+  pr "      };\n";
+  pr "      ret_tx.take().unwrap().send(ret).ok();\n";
+  pr "      true\n";
+  pr "    };\n";
+  pr "    self.add_command(completion_predicate)?;\n";
+  pr "    ret_rx.await.unwrap()\n";
+  pr "}\n\n"
+
+(* Print a Rust function for an asynchronous handle call which signals
+   completion by changing state. The predicate is a call like
+   "aio_is_connecting" which should get the value (like false) for the call to
+   be complete. *)
+let print_rust_async_handle_call_changing_state name aio_name call
+    (predicate, value) =
+  let value = if value then "true" else "false" in
+  print_rust_handle_call_comment call;
+  pr "pub async fn %s(&self, %s) -> SharedResult<()>\n" name
+    (rust_async_handle_call_args call);
+  pr "{\n";
+  print_ffi_call aio_name "self.data.handle.handle" call;
+  pr "?;\n";
+  pr "    let (ret_tx, ret_rx) = oneshot::channel::<SharedResult<()>>();\n";
+  pr "    let mut ret_tx = Some(ret_tx);\n";
+  pr "    let completion_predicate = \n";
+  pr "     move |handle: &Handle, res: &SharedResult<()>| {\n";
+  pr "      let ret = if let Err(_) = res {\n";
+  pr "        res.clone()\n";
+  pr "      } else {\n";
+  pr "        if handle.%s() != %s { return false; }\n" predicate value;
+  pr "        else { Ok(()) }\n";
+  pr "      };\n";
+  pr "      ret_tx.take().unwrap().send(ret).ok();\n";
+  pr "      true\n";
+  pr "    };\n";
+  pr "    self.add_command(completion_predicate)?;\n";
+  pr "    ret_rx.await.unwrap()\n";
+  pr "}\n\n"
+
+(* Print an impl with all handle calls. *)
+let print_rust_async_handle_impls () =
+  pr "impl AsyncHandle {\n";
+  NameMap.iter print_rust_sync_handle_call sync_handle_calls;
+  async_handle_calls
+  |> NameMap.iter (fun name (aio_name, call, async_kind) ->
+         match async_kind with
+         | WithCompletionCallback ->
+             print_rust_async_handle_call_with_completion_cb name aio_name
+               call
+         | ChangesState (predicate, value) ->
+             print_rust_async_handle_call_changing_state name aio_name call
+               (predicate, value));
+  pr "}\n\n"
+
+let print_rust_async_imports () =
+  pr "use crate::{*, types::*};\n";
+  pr "use os_socketaddr::OsSocketAddr;\n";
+  pr "use std::ffi::*;\n";
+  pr "use std::mem;\n";
+  pr "use std::net::SocketAddr;\n";
+  pr "use std::os::fd::{AsRawFd, OwnedFd};\n";
+  pr "use std::os::unix::prelude::*;\n";
+  pr "use std::path::PathBuf;\n";
+  pr "use std::ptr;\n";
+  pr "use std::sync::Arc;\n";
+  pr "use tokio::sync::oneshot;\n";
+  pr "\n"
+
+let generate_rust_async_bindings () =
+  generate_header CStyle ~copyright:"Tage Johansson";
+  pr "\n";
+  print_rust_async_imports ();
+  print_rust_async_handle_impls ()

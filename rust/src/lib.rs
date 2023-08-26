@@ -17,11 +17,19 @@
 
 #![deny(warnings)]
 
+#[cfg(feature = "tokio")]
+mod async_bindings;
+#[cfg(feature = "tokio")]
+mod async_handle;
 mod bindings;
 mod error;
 mod handle;
 pub mod types;
 mod utils;
+#[cfg(feature = "tokio")]
+pub use async_bindings::*;
+#[cfg(feature = "tokio")]
+pub use async_handle::{AsyncHandle, SharedResult};
 pub use bindings::*;
 pub use error::{Error, ErrorKind, FatalErrorKind, Result};
 pub use handle::Handle;

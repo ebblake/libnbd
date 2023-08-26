@@ -19,6 +19,7 @@ include $(top_srcdir)/subdir-rules.mk
 
 generator_built = \
 	libnbd-sys/src/generated.rs \
+	src/async_bindings.rs \
 	src/bindings.rs \
 	$(NULL)
 
@@ -30,6 +31,7 @@ source_files = \
 	src/handle.rs \
 	src/types.rs \
 	src/utils.rs \
+	src/async_handle.rs \
 	examples/connect-command.rs \
 	examples/get-size.rs \
 	examples/fetch-first-sector.rs \

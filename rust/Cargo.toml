@@ -48,9 +48,11 @@ os_socketaddr = "0.2.4"
 thiserror = "1.0.40"
 log = { version = "0.4.19", optional = true }
 libc = "0.2.147"
+tokio = { optional = true, version = "1.29.1", default-features = false, features = ["rt", "sync", "net"] }
+epoll = "4.3.3"
 
 [features]
-default = ["log"]
+default = ["log", "tokio"]
 
 [dev-dependencies]
 anyhow = "1.0.72"
