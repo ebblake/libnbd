@@ -36,6 +36,11 @@ type call = {
       {b guaranteed} never to do that we can save a bit of time by
       setting this to false. *)
   may_set_error : bool;
+  (** There are two types of asynchronous functions, those with a completion
+      callback and those which change state when completed. This field tells
+      if the function is asynchronous and in that case how one can check if
+      it has completed. *)
+  async_kind : async_kind option;
   (** The first stable version that the symbol appeared in, for
       example (1, 2) if the symbol was added in development cycle
       1.1.x and thus the first stable version was 1.2.  This is
@@ -120,6 +125,12 @@ and permitted_state =
                                not including CLOSED or DEAD *)
 | Closed | Dead            (** can be called when the handle is
                                CLOSED or DEAD *)
+and async_kind =
+(** The asynchronous call has a completion callback. *)
+| WithCompletionCallback
+(** The asynchronous call is completed when the given handle call returns the
+    given boolean value. Might for instance be ("aio_is_connected", false). *)
+| ChangesState of string * bool
 and link =
 | Link of string           (** link to L<nbd_PAGE(3)> *)
 | SectionLink of string    (** link to L<libnbd(3)/SECTION> *)

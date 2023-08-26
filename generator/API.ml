@@ -32,6 +32,7 @@ type call = {
   permitted_states : permitted_state list;
   is_locked : bool;
   may_set_error : bool;
+  async_kind : async_kind option;
   mutable first_version : int * int;
 }
 and arg =
@@ -103,6 +104,9 @@ and permitted_state =
 | Negotiating
 | Connected
 | Closed | Dead
+and async_kind =
+| WithCompletionCallback
+| ChangesState of string * bool
 and link =
 | Link of string
 | SectionLink of string
@@ -260,6 +264,7 @@ let default_call = { args = []; optargs = []; ret = RErr;
                      see_also = [];
                      permitted_states = [];
                      is_locked = true; may_set_error = true;
+                     async_kind = None;
                      first_version = (0, 0) }
 
 (* Calls.
@@ -2983,6 +2988,7 @@ wait for an L<eventfd(2)>.";
     default_call with
     args = [ SockAddrAndLen ("addr", "addrlen") ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to the NBD server";
     longdesc = "\
 Begin connecting to the NBD server.  The C<addr> and C<addrlen>
@@ -2995,6 +3001,7 @@ parameters specify the address of the socket to connect to.
     default_call with
     args = [ String "uri" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to an NBD URI";
     longdesc = "\
 Begin connecting to the NBD URI C<uri>.  Parameters behave as
@@ -3008,6 +3015,7 @@ documented in L<nbd_connect_uri(3)>.
     default_call with
     args = [ Path "unixsocket" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to the NBD server over a Unix domain socket";
     longdesc = "\
 Begin connecting to the NBD server over Unix domain socket
@@ -3022,6 +3030,7 @@ L<nbd_connect_unix(3)>.
     default_call with
     args = [ UInt32 "cid"; UInt32 "port" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to the NBD server over AF_VSOCK socket";
     longdesc = "\
 Begin connecting to the NBD server over the C<AF_VSOCK>
@@ -3035,6 +3044,7 @@ L<nbd_connect_vsock(3)>.
     default_call with
     args = [ String "hostname"; String "port" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to the NBD server over a TCP port";
     longdesc = "\
 Begin connecting to the NBD server listening on C<hostname:port>.
@@ -3047,6 +3057,7 @@ Parameters behave as documented in L<nbd_connect_tcp(3)>.
     default_call with
     args = [ Fd "sock" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect directly to a connected socket";
     longdesc = "\
 Begin connecting to the connected socket C<fd>.
@@ -3059,6 +3070,7 @@ Parameters behave as documented in L<nbd_connect_socket(3)>.
     default_call with
     args = [ StringList "argv" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect to the NBD server";
     longdesc = "\
 Run the command as a subprocess and begin connecting to it over
@@ -3072,6 +3084,7 @@ L<nbd_connect_command(3)>.
     default_call with
     args = [ StringList "argv" ]; ret = RErr;
     permitted_states = [ Created ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "connect using systemd socket activation";
     longdesc = "\
 Run the command as a subprocess and begin connecting to it using
@@ -3088,6 +3101,7 @@ L<nbd_connect_systemd_socket_activation(3)>.
     optargs = [ OClosure completion_closure ];
     ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "end negotiation and move on to using an export";
     longdesc = "\
 Request that the server finish negotiation and move on to serving the
@@ -3111,6 +3125,7 @@ when L<nbd_aio_is_negotiating(3)> returns true.";
     default_call with
     args = []; ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some (ChangesState ("aio_is_connecting", false));
     shortdesc = "end negotiation and close the connection";
     longdesc = "\
 Request that the server finish negotiation, gracefully if possible, then
@@ -3128,6 +3143,7 @@ L<nbd_aio_is_connecting(3)> to return false.";
     optargs = [ OClosure completion_closure ];
     ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request the server to initiate TLS";
     longdesc = "\
 Request that the server initiate a secure TLS connection, by
@@ -3152,6 +3168,7 @@ callback.";
     optargs = [ OClosure completion_closure ];
     ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request the server to enable structured replies";
     longdesc = "\
 Request that the server use structured replies, by sending
@@ -3176,6 +3193,7 @@ callback.";
     optargs = [ OClosure completion_closure ];
     ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request the server to list all exports during negotiation";
     longdesc = "\
 Request that the server list all exports that it supports.  This can
@@ -3198,6 +3216,7 @@ callback.";
     optargs = [ OClosure completion_closure ];
     ret = RErr;
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request the server for information about an export";
     longdesc = "\
 Request that the server supply information about the export name
@@ -3221,6 +3240,7 @@ callback.";
     args = [ Closure context_closure ]; ret = RInt;
     optargs = [ OClosure completion_closure ];
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request list of available meta contexts, using implicit query";
     longdesc = "\
 Request that the server list available meta contexts associated with
@@ -3248,6 +3268,7 @@ callback.";
     args = [ StringList "queries"; Closure context_closure ]; ret = RInt;
     optargs = [ OClosure completion_closure ];
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "request list of available meta contexts, using explicit query";
     longdesc = "\
 Request that the server list available meta contexts associated with
@@ -3275,6 +3296,7 @@ callback.";
     args = [ Closure context_closure ]; ret = RInt;
     optargs = [ OClosure completion_closure ];
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "select specific meta contexts, with implicit query list";
     longdesc = "\
 Request that the server supply all recognized meta contexts
@@ -3308,6 +3330,7 @@ callback.";
     args = [ StringList "queries"; Closure context_closure ]; ret = RInt;
     optargs = [ OClosure completion_closure ];
     permitted_states = [ Negotiating ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "select specific meta contexts, with explicit query list";
     longdesc = "\
 Request that the server supply all recognized meta contexts
@@ -3343,6 +3366,7 @@ callback.";
                 OFlags ("flags", cmd_flags, Some []) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "read from the NBD server";
     longdesc = "\
 Issue a read command to the NBD server.
@@ -3377,6 +3401,7 @@ Other parameters behave as documented in L<nbd_pread(3)>."
                 OFlags ("flags", cmd_flags, Some ["DF"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "read from the NBD server";
     longdesc = "\
 Issue a read command to the NBD server.
@@ -3409,6 +3434,7 @@ Other parameters behave as documented in L<nbd_pread_structured(3)>."
                 OFlags ("flags", cmd_flags, Some ["FUA"; "PAYLOAD_LEN"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "write to the NBD server";
     longdesc = "\
 Issue a write command to the NBD server.
@@ -3428,6 +3454,7 @@ completed.  Other parameters behave as documented in L<nbd_pwrite(3)>."
     default_call with
     args = []; optargs = [ OFlags ("flags", cmd_flags, Some []) ]; ret = RErr;
     permitted_states = [ Connected ];
+    async_kind = Some (ChangesState ("aio_is_closed", true));
     shortdesc = "disconnect from the NBD server";
     longdesc = "\
 Issue the disconnect command to the NBD server.  This is
@@ -3455,6 +3482,7 @@ however, L<nbd_shutdown(3)> will call this function if appropriate.";
                 OFlags ("flags", cmd_flags, Some []) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "send flush command to the NBD server";
     longdesc = "\
 Issue the flush command to the NBD server.
@@ -3476,6 +3504,7 @@ Other parameters behave as documented in L<nbd_flush(3)>."
                 OFlags ("flags", cmd_flags, Some ["FUA"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "send trim command to the NBD server";
     longdesc = "\
 Issue a trim command to the NBD server.
@@ -3497,6 +3526,7 @@ Other parameters behave as documented in L<nbd_trim(3)>."
                 OFlags ("flags", cmd_flags, Some []) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "send cache (prefetch) command to the NBD server";
     longdesc = "\
 Issue the cache (prefetch) command to the NBD server.
@@ -3519,6 +3549,7 @@ Other parameters behave as documented in L<nbd_cache(3)>."
                         Some ["FUA"; "NO_HOLE"; "FAST_ZERO"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "send write zeroes command to the NBD server";
     longdesc = "\
 Issue a write zeroes command to the NBD server.
@@ -3541,6 +3572,7 @@ Other parameters behave as documented in L<nbd_zero(3)>."
                 OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
     ret = RCookie;
     permitted_states = [ Connected ];
+    async_kind = Some WithCompletionCallback;
     shortdesc = "send block status command, with 32-bit callback";
     longdesc = "\
 Send the block status command to the NBD server.
