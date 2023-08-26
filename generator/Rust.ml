@@ -583,18 +583,17 @@ let generate_rust_bindings () =
 
 let excluded_handle_calls : NameSet.t =
   NameSet.of_list
-    [
-      "aio_get_fd";
-      "aio_get_direction";
-      "aio_notify_read";
-      "aio_notify_write";
-      "clear_debug_callback";
-      "get_debug";
-      "poll";
-      "poll2";
-      "set_debug";
-      "set_debug_callback";
-    ]
+  @@ [
+       "aio_get_fd";
+       "aio_get_direction";
+       "clear_debug_callback";
+       "get_debug";
+       "set_debug";
+       "set_debug_callback";
+     ]
+  @ (handle_calls
+    |> List.filter (fun (_, { modifies_fd }) -> modifies_fd)
+    |> List.map (fun (name, _) -> name))
 
 (* A mapping with names as keys. *)
 module NameMap = Map.Make (String)
@@ -624,11 +623,7 @@ let async_handle_calls : (string * call * async_kind) NameMap.t =
 let sync_handle_calls : call NameMap.t =
   handle_calls
   |> List.filter (fun (n, _) -> not (NameSet.mem n excluded_handle_calls))
-  |> List.filter (fun (name, _) ->
-         (not (NameMap.mem name async_handle_calls))
-         && not
-              (String.starts_with ~prefix:"aio_" name
-              && NameMap.mem (strip_aio name) async_handle_calls))
+  |> List.filter (fun (n, _) -> not (NameMap.mem n async_handle_calls))
   |> List.to_seq |> NameMap.of_seq
 
 (* Get the Rust type for an argument in the asynchronous API. Like
