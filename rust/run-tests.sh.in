@@ -32,6 +32,8 @@ if [ -z "$VG" ]; then
              --run '@CARGO@ run --example get-size -- $unixsocket'
     @NBDKIT@ -U - floppy . \
              --run '@CARGO@ run --example fetch-first-sector -- $unixsocket'
+    @NBDKIT@ -U - memory 10M \
+             --run '@CARGO@ run --example concurrent-read-write -- $unixsocket'
 else
     @CARGO@ test --config "target.'cfg(all())'.runner = \"$VG\"" -- --nocapture
 fi
