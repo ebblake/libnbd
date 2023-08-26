@@ -41,6 +41,13 @@ type call = {
       if the function is asynchronous and in that case how one can check if
       it has completed. *)
   async_kind : async_kind option;
+  (** A flag telling if the call may do something with the file descriptor.
+      Some bindings needs exclusive access to the file descriptor and can not
+      allow the user to call [aio_notify_read] or [aio_notify_write], neither
+      directly nor indirectly from another call. So all calls that might trigger
+      any of these functions to be called, including all synchronous commands
+      like [pread] or [connect], should set this to [true]. *)
+  modifies_fd : bool;
   (** The first stable version that the symbol appeared in, for
       example (1, 2) if the symbol was added in development cycle
       1.1.x and thus the first stable version was 1.2.  This is

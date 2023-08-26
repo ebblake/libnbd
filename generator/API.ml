@@ -33,6 +33,7 @@ type call = {
   is_locked : bool;
   may_set_error : bool;
   async_kind : async_kind option;
+  modifies_fd: bool;
   mutable first_version : int * int;
 }
 and arg =
@@ -265,6 +266,7 @@ let default_call = { args = []; optargs = []; ret = RErr;
                      permitted_states = [];
                      is_locked = true; may_set_error = true;
                      async_kind = None;
+                     modifies_fd = false;
                      first_version = (0, 0) }
 
 (* Calls.
@@ -1255,6 +1257,7 @@ Return true if option negotiation mode was enabled on this handle.";
     default_call with
     args = []; ret = RErr;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "end negotiation and move on to using an export";
     longdesc = "\
 Request that the server finish negotiation and move on to serving the
@@ -1282,6 +1285,7 @@ although older servers will instead have killed the connection.";
     default_call with
     args = []; ret = RErr;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "end negotiation and close the connection";
     longdesc = "\
 Request that the server finish negotiation, gracefully if possible, then
@@ -1295,6 +1299,7 @@ enabled option mode.";
     default_call with
     args = []; ret = RBool;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "request the server to initiate TLS";
     longdesc = "\
 Request that the server initiate a secure TLS connection, by
@@ -1333,6 +1338,7 @@ established, as reported by L<nbd_get_tls_negotiated(3)>.";
     default_call with
     args = []; ret = RBool;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "request the server to enable structured replies";
     longdesc = "\
 Request that the server use structured replies, by sending
@@ -1359,6 +1365,7 @@ later calls to this function return false.";
     default_call with
     args = [ Closure list_closure ]; ret = RInt;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "request the server to list all exports during negotiation";
     longdesc = "\
 Request that the server list all exports that it supports.  This can
@@ -1400,6 +1407,7 @@ description is set with I<-D>.";
     default_call with
     args = []; ret = RErr;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "request the server for information about an export";
     longdesc = "\
 Request that the server supply information about the export name
@@ -1431,6 +1439,7 @@ corresponding L<nbd_opt_go(3)> would succeed.";
     default_call with
     args = [ Closure context_closure ]; ret = RInt;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "list available meta contexts, using implicit query list";
     longdesc = "\
 Request that the server list available meta contexts associated with
@@ -1486,6 +1495,7 @@ a server may send a lengthy list.";
     default_call with
     args = [ StringList "queries"; Closure context_closure ]; ret = RInt;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "list available meta contexts, using explicit query list";
     longdesc = "\
 Request that the server list available meta contexts associated with
@@ -1536,6 +1546,7 @@ a server may send a lengthy list.";
     default_call with
     args = [ Closure context_closure ]; ret = RInt;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "select specific meta contexts, using implicit query list";
     longdesc = "\
 Request that the server supply all recognized meta contexts
@@ -1595,6 +1606,7 @@ no contexts are reported, or may fail but have a non-empty list.";
     default_call with
     args = [ StringList "queries"; Closure context_closure ]; ret = RInt;
     permitted_states = [ Negotiating ];
+    modifies_fd = true;
     shortdesc = "select specific meta contexts, using explicit query list";
     longdesc = "\
 Request that the server supply all recognized meta contexts
@@ -1825,6 +1837,7 @@ parameter in NBD URIs is allowed.";
     default_call with
     args = [ String "uri" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect to NBD URI";
     longdesc = "\
 Connect (synchronously) to an NBD server and export by specifying
@@ -2003,6 +2016,7 @@ See L<nbd_get_uri(3)>.";
     default_call with
     args = [ Path "unixsocket" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect to NBD server over a Unix domain socket";
     longdesc = "\
 Connect (synchronously) over the named Unix domain socket (C<unixsocket>)
@@ -2016,6 +2030,7 @@ to an NBD server running on the same machine.
     default_call with
     args = [ UInt32 "cid"; UInt32 "port" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect to NBD server over AF_VSOCK protocol";
     longdesc = "\
 Connect (synchronously) over the C<AF_VSOCK> protocol from a
@@ -2036,6 +2051,7 @@ built on a system with vsock support, see L<nbd_supports_vsock(3)>.
     default_call with
     args = [ String "hostname"; String "port" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect to NBD server over a TCP port";
     longdesc = "\
 Connect (synchronously) to the NBD server listening on
@@ -2050,6 +2066,7 @@ such as C<\"10809\">.
     default_call with
     args = [ Fd "sock" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect directly to a connected socket";
     longdesc = "\
 Pass a connected socket C<sock> through which libnbd will talk
@@ -2071,6 +2088,7 @@ handle is closed.  The caller must not use the socket in any way.
     default_call with
     args = [ StringList "argv" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect to NBD server command";
     longdesc = "\
 Run the command as a subprocess and connect to it over
@@ -2106,6 +2124,7 @@ is killed.
     default_call with
     args = [ StringList "argv" ]; ret = RErr;
     permitted_states = [ Created ];
+    modifies_fd = true;
     shortdesc = "connect using systemd socket activation";
     longdesc = "\
 Run the command as a subprocess and connect to it using
@@ -2479,6 +2498,7 @@ requests sizes.
     optargs = [ OFlags ("flags", cmd_flags, Some []) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "read from the NBD server";
     longdesc = "\
 Issue a read command to the NBD server for the range starting
@@ -2518,6 +2538,7 @@ on failure."
     optargs = [ OFlags ("flags", cmd_flags, Some ["DF"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "read from the NBD server";
     longdesc = "\
 Issue a read command to the NBD server for the range starting
@@ -2610,6 +2631,7 @@ on failure."
     optargs = [ OFlags ("flags", cmd_flags, Some ["FUA"; "PAYLOAD_LEN"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "write to the NBD server";
     longdesc = "\
 Issue a write command to the NBD server, writing the data in
@@ -2646,6 +2668,7 @@ extended headers were negotiated."
     args = []; optargs = [ OFlags ("flags", shutdown_flags, None) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "disconnect from the NBD server";
     longdesc = "\
 Issue the disconnect command to the NBD server.  This is
@@ -2683,6 +2706,7 @@ A future version of the library may add new flags.";
     default_call with
     args = []; optargs = [ OFlags ("flags", cmd_flags, Some []) ]; ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "send flush command to the NBD server";
     longdesc = "\
 Issue the flush command to the NBD server.  The function should
@@ -2703,6 +2727,7 @@ protocol extensions)."
     optargs = [ OFlags ("flags", cmd_flags, Some ["FUA"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "send trim command to the NBD server";
     longdesc = "\
 Issue a trim command to the NBD server, which if supported
@@ -2736,6 +2761,7 @@ L<nbd_can_fua(3)>)."
     optargs = [ OFlags ("flags", cmd_flags, Some []) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "send cache (prefetch) command to the NBD server";
     longdesc = "\
 Issue the cache (prefetch) command to the NBD server, which
@@ -2767,6 +2793,7 @@ protocol extensions)."
                         Some ["FUA"; "NO_HOLE"; "FAST_ZERO"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "send write zeroes command to the NBD server";
     longdesc = "\
 Issue a write zeroes command to the NBD server, which if supported
@@ -2807,6 +2834,7 @@ cannot do this, see L<nbd_can_fast_zero(3)>)."
     optargs = [ OFlags ("flags", cmd_flags, Some ["REQ_ONE"]) ];
     ret = RErr;
     permitted_states = [ Connected ];
+    modifies_fd = true;
     shortdesc = "send block status command, with 32-bit callback";
     longdesc = "\
 Issue the block status command to the NBD server.  If
@@ -2954,6 +2982,7 @@ validate that the server obeyed the flag."
   "poll", {
     default_call with
     args = [ Int "timeout" ]; ret = RInt;
+    modifies_fd = true;
     shortdesc = "poll the handle once";
     longdesc = "\
 This is a simple implementation of L<poll(2)> which is used
@@ -2975,6 +3004,7 @@ intended as something you would use.";
   "poll2", {
     default_call with
     args = [Fd "fd"; Int "timeout" ]; ret = RInt;
+    modifies_fd = true;
     shortdesc = "poll the handle once, with fd";
     longdesc = "\
 This is the same as L<nbd_poll(3)>, but an additional
@@ -3694,6 +3724,7 @@ and invalidate the need to write more commands.
   "aio_notify_read", {
     default_call with
     args = []; ret = RErr;
+    modifies_fd = true;
     shortdesc = "notify that the connection is readable";
     longdesc = "\
 Send notification to the state machine that the connection
@@ -3705,6 +3736,7 @@ connection is readable.";
   "aio_notify_write", {
     default_call with
     args = []; ret = RErr;
+    modifies_fd = true;
     shortdesc = "notify that the connection is writable";
     longdesc = "\
 Send notification to the state machine that the connection
