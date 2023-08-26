@@ -26,6 +26,7 @@ requires @NBDKIT@ floppy --version
 requires @NBDKIT@ memory --version
 
 if [ -z "$VG" ]; then
+    @CARGO@ c --no-default-features
     @CARGO@ test -- --nocapture
     @CARGO@ run --example connect-command
     @NBDKIT@ -U - memory 1M \

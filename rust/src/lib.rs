@@ -25,6 +25,7 @@ mod bindings;
 mod error;
 mod handle;
 pub mod types;
+#[allow(unused)]
 mod utils;
 #[cfg(feature = "tokio")]
 pub use async_bindings::*;
